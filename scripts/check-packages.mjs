@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
-import { parse } from 'yaml';
 const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
 for (const id of ['core', ...ids]) {
   const root = new URL(`../packages/${id}/`, import.meta.url);
@@ -11,12 +10,7 @@ for (const id of ['core', ...ids]) {
   assert.ok(manifest.files.includes('README.zh-CN.md'));
   assert.equal(manifest.peerDependencies['@deepseek-ai/dsh-fs'], '0.1.7-rc.2');
   if (id === 'core') continue;
-  assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml');
-  const patch = parse(await readFile(new URL('cordis.patch.yml', root), 'utf8'));
-  assert.deepEqual(patch, [
-    {id: 'compaction-basic', name: manifest.name, config: {}},
-    {id: 'tool-result-pruner', disabled: true},
-  ]);
+  assert.deepEqual(manifest.dsh.bundle.patch, [], 'Installing a dependency must not mount an engine in the wrong profile scope.');
   const plugin = await import(new URL('dist/index.js', root));
   assert.equal(plugin.strategy.id, id);
   assert.equal(typeof plugin.default.apply, 'function');
@@ -25,4 +19,4 @@ for (const id of ['core', ...ids]) {
   assert.equal(typeof pipeline.run, 'function');
   assert.equal(typeof pipeline.summarizeRange, 'function');
 }
-console.log('All eight packages have built exports, licenses, and valid DSH bundle patches.');
+console.log('All eight packages have built exports, licenses, and valid DSH bundle declarations.');

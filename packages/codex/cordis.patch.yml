@@ -1,8 +1,0 @@
-# Replace the existing provider; install one context strategy per profile.
-- id: compaction-basic
-  name: dsh-context-codex
-  config: {}
-
-# Keep tool results available to the local Codex summary workflow.
-- id: tool-result-pruner
-  disabled: true

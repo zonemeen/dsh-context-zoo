@@ -25,7 +25,6 @@
     "dist/**/*.d.ts.map",
     "README.md",
     "README.zh-CN.md",
-    "cordis.patch.yml",
     "src",
     "LICENSE"
   ],
@@ -50,7 +49,7 @@
   },
   "dsh": {
     "bundle": {
-      "patch": "./cordis.patch.yml"
+      "patch": []
     }
   }
 }

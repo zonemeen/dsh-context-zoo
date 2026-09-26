@@ -33,36 +33,80 @@ pnpm install
 pnpm check
 ```
 
-`check` 构建所有包，运行源流程测试、真实 Cordis/Session/LLM 接入测试和包结构检查。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较七个插件的预算元数据，不衡量模型摘要质量。
+`check` 构建所有包，运行源流程测试、包结构检查，以及经过真实 Cordis Loader 和 DSH 服务的接入测试，包括 `/compact` 和自动压缩。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较七个插件的预算元数据，不衡量模型摘要质量。
+
+如果本地已有 DSH 源码，可用仓库自带的 headless 和 Web 配置验证生成的覆盖补丁：
+
+```sh
+DSH_SOURCE_DIR=/path/to/deepseek-harness pnpm test:profiles
+```
+
+这项可选检查验证配置组合，不包含完整 Web/Electron 启动或外部模型调用。
+
+### DeepSeek 实际 API 检查与凭据
+
+[2026-09-26 实测结果](reports/deepseek/2026-09-26/README.zh-CN.md) 汇集了不同次执行中七个插件的最终观察，包含所选调用的 API 用量、测试范围与限制，以及汇总文件 `results.json`。
+
+通过环境变量向测试进程提供 `DEEPSEEK_API_KEY` 后运行：
+
+```sh
+pnpm test:deepseek
+```
+
+[测试脚本](scripts/check-deepseek.mjs) 使用 DSH 官方 DeepSeek 适配器、`https://api.deepseek.com/anthropic` 和 `deepseek-flash`。先测压缩前的事实召回，再逐个运行七个插件的 `/compact`，从事件记录恢复会话后再次检查召回。测试使用合成的文本历史，最多发起 18 次 HTTP 请求，并设置 `keepRecentTokens: 256`、`maxSummaryAttempts: 1`，摘要输出上限默认为 `maxSummaryTokens: 2048`。这项检查覆盖手动压缩和召回；默认触发策略、实际上下文溢出和完整应用启动需要单独测试。token 缩减量为估算值，报告另行记录 API 用量。
+
+脚本将 `report.json` 写入临时结果目录，并打印路径。可用 `pnpm test:deepseek --output /absolute/path/to/results` 指定目录。密钥只留在进程内存中，不写入凭据文件或实际 DSH profile。
+
+选择 Codex、将摘要上限设为 4,096 tokens，并跳过最初的未压缩召回基线：
+
+```sh
+pnpm test:deepseek --agent codex --max-summary-tokens 4096 --skip-baseline
+```
+
+所选插件仍会执行 `/compact` 和会话回放后的召回检查。
+
+在 macOS 上长期保存密钥时，建议通过**钥匙串访问**创建密码项，服务/名称填 `dsh-context-zoo-deepseek`，账户填自己的登录用户名。在 GUI 中输入密钥，仅在启动测试时注入：
+
+```sh
+DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo-deepseek -w)" pnpm test:deepseek
+```
+
+这样 shell 历史中不会出现密钥原文。钥匙串由 macOS 管理；DSH 原生支持的存储是 `$DSH_HOME/.credentials.yaml`（默认 `~/.dsh/.credentials.yaml`），它是由 `0600` 权限保护的明文文件，没有加密或钥匙串接入。不要把凭据写入仓库文件；已在聊天中暴露的密钥应当轮换。
 
 ## 接入 DSH
 
 目标版本为 DSH `0.1.7-rc.2`。**该版本需要一个 Session 写入接口补丁**：插件状态和辅助模型调用需要记录为可忽略事件，原接口尚不能写入这个标记。仓库安装自动应用补丁；实际启动 DSH 的宿主也必须应用，步骤见 [Session 补丁说明](patches/README.zh-CN.md)。插件会检查实际 Session 实现，缺失时拒绝写入。
 
-完成宿主补丁后，从本仓库根目录链接一个插件：
+完成宿主补丁后，从本仓库根目录构建并安装一个插件。每个包在 `package.json` 中声明 `dsh.bundle.patch: []`，因此 DSH 将其识别为 bundle，但不会加载默认配置层。生成的显式覆盖补丁会在 profile 现有的压缩作用域内启用插件。
 
 ```sh
 pnpm build
 dsh plugin --profile web add link:./packages/pi
-dsh --profile web --dump-config
-dsh web
+dsh --profile web --dump-config > /tmp/dsh-web.yml
+node scripts/create-profile-patch.mjs pi /tmp/dsh-web.yml > /tmp/dsh-web-pi.patch.yml
+dsh --profile web --patch /tmp/dsh-web-pi.patch.yml
 ```
 
-`link:` 使用当前 checkout 的构建产物，修改源码后需重建。一个 profile 只安装一个上下文插件；切换时先移除旧包。
+将 agent id 和包路径换成需要的插件，例如 `codex` 和 `./packages/codex`。`link:` 使用当前 checkout 的构建产物，修改源码后需重建。一个 profile 使用一种上下文策略。
 
-每个包的 `cordis.patch.yml` 替换 `compaction-basic` 配置行，并禁用独立的 `tool-result-pruner`。profile 需要包含这些行。文件恢复经过 DSH `fs` 服务，沿用宿主的文件权限；没有文件服务或读取被拒绝时记录原因，不把旧工具输出当成当前文件。
+生成器读取解析完成的 profile，在各自作用域内替换已启用的压缩引擎，并禁用相应的原生工具结果清理器，同时保留其他配置行和 `!!js` 表达式。根作用域/headless 会在 `context-zoo` 分组内插入 `context-zoo-engine`；Web 则保留各已启用预设的压缩分组内的 `compaction-basic` id。不带压缩功能的预设保持原样，包括自带的 `minimal` 预设。图片外置和输出溢写策略仍独立运行。
+
+生成的覆盖补丁基于导出配置中的已有层。切换策略时，移除旧包、安装新包，再从未叠加上一次临时覆盖补丁的基础 profile 导出并重新生成。需要持久启用时，将生成的补丁条目追加到 profile 的 `cordis.patch.yml` 已有条目之后。切换持久配置时，先移除上一次生成的条目，再导出并生成替代补丁。预设配置发生变化后也需要重新生成：DSH 会替换整个 `config` 对象，所以生成的预设覆盖条目包含完整配置。
+
+文件恢复经过 DSH `fs` 服务，沿用宿主的文件权限；没有文件服务或读取被拒绝时，插件记录原因并跳过该文件。
 
 ## 配置
 
-在 profile 的 `cordis.patch.yml` 中覆盖相应行。DSH 替换整行 `config`，需要的字段应写在一起：
+在生成的覆盖补丁中，找到名称为所选插件的各配置行，例如 `dsh-context-pi`，编辑这些行的 `config`。下面仅展示 config 片段：
 
 ```yaml
-- id: compaction-basic
-  config:
-    auto: true
-    maxSummaryTokens: 8000
-    maxOverflowRetries: 2
+config:
+  auto: true
+  maxSummaryTokens: 8000
+  maxOverflowRetries: 2
 ```
+
+DSH 替换整个 `config` 对象，需要的设置应写在一起，并保留生成补丁中外围的分组和预设配置。
 
 完整配置见 [core README](packages/core/README.zh-CN.md)，默认值和适用字段见各插件 README。相同字段可以有不同算法语义，例如 Pi 的保留预算允许切开一个回合并额外摘要，而 ZCode 默认保留完整的最后一轮。
 

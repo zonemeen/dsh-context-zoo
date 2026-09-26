@@ -6,17 +6,9 @@
 
 ## 安装
 
-使用 DSH `0.1.7-rc.2`，并将 [Session 写入补丁](../../patches/README.zh-CN.md) 应用到实际宿主。从本仓库根目录执行：
+使用 DSH `0.1.7-rc.2`，并将 [Session 写入补丁](../../patches/README.zh-CN.md) 应用到实际宿主。按照根目录的 [安装与启用说明](../../README.zh-CN.md#接入-dsh) 操作，包路径使用 `./packages/codex`，覆盖补丁生成器的 agent id 使用 `codex`。
 
-```sh
-pnpm install
-pnpm build
-dsh plugin --profile web add link:./packages/codex
-dsh --profile web --dump-config
-dsh web
-```
-
-每个 profile 安装一个上下文插件。配置补丁替换 `compaction-basic` 并禁用 `tool-result-pruner`，profile 中需要存在这两项。修改源码后需要重新构建本仓库。
+本包在 `package.json` 中声明 `dsh.bundle.patch: []`，因此 DSH 将其识别为 bundle，但不会加载默认配置层。安装后通过生成的覆盖补丁启用 Codex。生成器会将插件放到 profile 已启用的压缩作用域中，并禁用相应的原生工具结果清理器。每个 profile 使用一种上下文策略，修改源码后重新构建本仓库。持久启用和策略切换步骤见根目录说明。
 
 ```ts
 import codexContext from 'dsh-context-codex';
@@ -35,17 +27,16 @@ ctx.plugin(codexContext);
 
 ## 配置
 
-覆盖 profile 中的 `compaction-basic` 配置。DSH 替换整个 `config` 对象，需要的设置应放在一起：
+在生成的覆盖补丁中找到各个 `dsh-context-codex` 配置行，编辑其 `config`。这些行位于对应分组或预设内部，id 取决于作用域。DSH 替换整个 config 对象，需要的设置应放在一起。下面展示 config 片段：
 
 ```yaml
-- id: compaction-basic
-  config:
-    auto: true
-    thresholdRatio: 0.9
-    keepRecentTokens: 20000
-    maxSummaryAttempts: 6
-    summaryRetryDelayMs: 200
-    restoreContext: true
+config:
+  auto: true
+  thresholdRatio: 0.9
+  keepRecentTokens: 20000
+  maxSummaryAttempts: 6
+  summaryRetryDelayMs: 200
+  restoreContext: true
 ```
 
 | 设置 | 默认值与行为 |

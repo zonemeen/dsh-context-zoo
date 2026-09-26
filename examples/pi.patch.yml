@@ -1,6 +1,20 @@
-# Install dsh-context-pi first, then pass this file with --patch.
+# For the shipped DSH headless profile only; install dsh-context-pi first.
+# Run: dsh --profile headless --patch ./examples/pi.patch.yml "Your task"
+# For Web or customized profiles, use scripts/create-profile-patch.mjs instead.
 - id: compaction-basic
-  config:
-    reserveTokens: 16384
-    keepRecentTokens: 20000
-    maxSummaryTokens: 8000
+  name: '@deepseek-ai/dsh-compaction-basic'
+  disabled: true
+- id: tool-result-pruner
+  name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+  disabled: true
+- insert:
+    - id: context-zoo
+      name: cordis:group
+      group: true
+      config:
+        - id: context-zoo-engine
+          name: dsh-context-pi
+          config:
+            reserveTokens: 16384
+            keepRecentTokens: 20000
+            maxSummaryTokens: 8000

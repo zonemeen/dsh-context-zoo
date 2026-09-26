@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { Session } from '@deepseek-ai/dsh-session';
+import { validateStoredEvents } from '@deepseek-ai/dsh-session-persistence';
+import claudePlugin from '../packages/claude-code/dist/index.js';
+import codexPlugin from '../packages/codex/dist/index.js';
+import openCodePlugin from '../packages/opencode/dist/index.js';
+import piPlugin from '../packages/pi/dist/index.js';
+import qwenPlugin from '../packages/qwen-code/dist/index.js';
+import zcodePlugin from '../packages/zcode/dist/index.js';
+import kimiPlugin from '../packages/kimi-code/dist/index.js';
+import { harness, assertToolPairs } from './helpers/context-harness.mjs';
+import CommandRuntime from '@deepseek-ai/dsh-commands';
+import * as commandCompact from '@deepseek-ai/dsh-command-compact';
+const pluginCases = [['claude-code', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen-code', qwenPlugin], ['zcode', zcodePlugin], ['kimi-code', kimiPlugin]];
+
+for (const [id, plugin] of pluginCases) {
+  test(id + ': real /compact dispatch reaches the selected engine and replays the durable replacement', async t => {
+    const { ctx, session, agent, adapter, maintenance } = await harness(t, { plugin, mode: id === 'qwen-code' ? 'xml' : 'success', openTurn: false });
+    assert.equal(ctx.compaction.constructor.name, 'PipelineEngine');
+    await ctx.plugin(CommandRuntime);
+    await ctx.plugin(commandCompact);
+    const before = session.deriveMessages();
+    const generation = session.surface.replaceGeneration;
+    const execution = await ctx.commands.execute(agent, '/compact', [], new AbortController().signal);
+    assert.ok(execution, 'The shipped /compact command must register.');
+    assert.equal(execution.result.kind, 'success');
+    assert.match(execution.result.text, /^Compacted /);
+    assert.equal(maintenance.calls, 1);
+    assert.equal(maintenance.released, 1);
+    assert.ok(adapter.requests.length > 0);
+    assert.ok(session.surface.replaceGeneration > generation);
+    const events = structuredClone(session.snapshotEvents());
+    const ownState = events.filter(event => event.type === 'context-zoo/state');
+    assert.ok(ownState.length > 0);
+    assert.deepEqual([...new Set(ownState.map(event => event.data.plugin))], [id]);
+    const compact = events.filter(event => event.type.startsWith('compaction/'));
+    assert.deepEqual(compact.map(event => event.type), ['compaction/start', 'compaction/summary', 'compaction/end']);
+    assert.ok(compact.every(event => event.data.sourceCommandId === execution.commandId));
+    const checkpoint = session.deriveMessages().find(message => message.source.kind === 'compact-checkpoint');
+    assert.equal(checkpoint.source.sourceCommandId, execution.commandId);
+    assert.deepEqual(session.deriveMessages()[0], before[0]);
+    assertToolPairs(session.deriveMessages());
+    validateStoredEvents(session.header, events);
+    const restored = Session.create(session.id, events, session.header, session.inheritedEventCount, ctx.sessions.messageProjections);
+    assert.deepEqual(restored.deriveMessages(), session.deriveMessages());
+    assert.deepEqual(events.filter(event => event.type.startsWith('command/')).map(event => event.type), ['command/run', 'command/done']);
+  });
+  test(id + ': real agent/pre-step waterfall invokes its automatic workflow', async t => {
+    const { ctx, session, agent, adapter } = await harness(t, { plugin, mode: id === 'qwen-code' ? 'xml' : 'success', config: { auto: true } });
+    const generation = session.surface.replaceGeneration;
+    let delegated = false;
+    const decision = await ctx.waterfall('agent/pre-step', { agent, signal: new AbortController().signal }, async () => { delegated = true; return { kind: 'continue' }; });
+    assert.equal(delegated, true);
+    assert.deepEqual(decision, { kind: 'continue' });
+    assert.ok(adapter.requests.length > 0);
+    assert.ok(session.surface.replaceGeneration > generation);
+    const ownState = session.snapshotEvents().filter(event => event.type === 'context-zoo/state');
+    assert.deepEqual([...new Set(ownState.map(event => event.data.plugin))], [id]);
+    assertToolPairs(session.deriveMessages());
+  });
+}

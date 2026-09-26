@@ -6,17 +6,9 @@ This package adapts Codex's local summary workflow to DeepSeek Harness. It owns 
 
 ## Install
 
-Use DSH `0.1.7-rc.2` with the [Session writer patch](../../patches/README.md) applied to the actual host. From this repository's root:
+Use DSH `0.1.7-rc.2` with the [Session writer patch](../../patches/README.md) applied to the actual host. Follow the root [installation and activation instructions](../../README.md#use-with-dsh), using `./packages/codex` as the package path and `codex` as the overlay generator's agent id.
 
-```sh
-pnpm install
-pnpm build
-dsh plugin --profile web add link:./packages/codex
-dsh --profile web --dump-config
-dsh web
-```
-
-Install one context plugin per profile. The bundle replaces `compaction-basic` and disables `tool-result-pruner`; both entries must exist in the profile. Rebuild this checkout after source changes.
+The package declares `dsh.bundle.patch: []` in `package.json`, so DSH recognizes it as a bundle without default configuration layers. Activate Codex with the generated overlay after installation. The generator places the plugin in the profile's active compaction scopes and disables their native tool-result pruner. Use one context strategy per profile and rebuild this checkout after source changes. Persistent activation and strategy switching are covered in the root instructions.
 
 ```ts
 import codexContext from 'dsh-context-codex';
@@ -35,17 +27,16 @@ ctx.plugin(codexContext);
 
 ## Configuration
 
-Override the profile's `compaction-basic` configuration. DSH replaces the entire `config` object, so include the desired settings together:
+Find each `dsh-context-codex` row in the generated overlay and edit its `config`. The row is nested inside the selected group or preset; its id depends on that scope. DSH replaces the whole config object, so include the desired settings together. Example config fragment:
 
 ```yaml
-- id: compaction-basic
-  config:
-    auto: true
-    thresholdRatio: 0.9
-    keepRecentTokens: 20000
-    maxSummaryAttempts: 6
-    summaryRetryDelayMs: 200
-    restoreContext: true
+config:
+  auto: true
+  thresholdRatio: 0.9
+  keepRecentTokens: 20000
+  maxSummaryAttempts: 6
+  summaryRetryDelayMs: 200
+  restoreContext: true
 ```
 
 | Setting | Default and behavior |
