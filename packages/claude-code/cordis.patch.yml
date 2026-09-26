@@ -1,0 +1,8 @@
+# Replace the existing provider; install one context strategy per profile.
+- id: compaction-basic
+  name: dsh-context-claude-code
+  config: {}
+
+# This strategy owns pruning; avoid a second independent policy.
+- id: tool-result-pruner
+  disabled: true

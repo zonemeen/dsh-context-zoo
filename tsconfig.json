@@ -1,0 +1,26 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/claude-code"
+    },
+    {
+      "path": "packages/opencode"
+    },
+    {
+      "path": "packages/pi"
+    },
+    {
+      "path": "packages/qwen-code"
+    },
+    {
+      "path": "packages/zcode"
+    },
+    {
+      "path": "packages/kimi-code"
+    }
+  ]
+}

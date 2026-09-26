@@ -1,0 +1,16 @@
+--- a/packages/core/session/src/index.ts
++++ b/packages/core/session/src/index.ts
+@@ -722,10 +722,11 @@
+   append<T extends SessionEventType>(
+     type: T,
+     data: SessionEventMap[T],
+-    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : []
++    ...opts: T extends SurfaceEventType ? [opts: SurfaceIntent<T>] : [opts?: { ignorable: true }]
+   ): SessionEvent<T> {
+-    const surfaceOpts: SurfaceIntent | undefined = opts[0]
++    const surfaceOpts: (Partial<SurfaceIntent> & { ignorable?: true }) | undefined = opts[0]
+     const surfaceMetadata = {
++      ...surfaceOpts?.ignorable === true ? { ignorable: true as const } : {},
+       ...surfaceOpts?.sourceEventSeqs === undefined ? {} : { sourceEventSeqs: surfaceOpts.sourceEventSeqs },
+       ...surfaceOpts?.surfaceOp === undefined ? {} : { surfaceOp: surfaceOpts.surfaceOp },
+     }
