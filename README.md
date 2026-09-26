@@ -2,15 +2,16 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Independent context management workflows from Claude Code, OpenCode, Pi, Qwen Code, ZCode, and Kimi Code, implemented as [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugins. This TypeScript and pnpm monorepo gives each plugin its own token accounting, triggers, history selection, input preparation, summarization, retries, and recovery.
+Independent context management workflows from Claude Code, Codex, OpenCode, Pi, Qwen Code, ZCode, and Kimi Code, implemented as [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugins. This TypeScript and pnpm monorepo gives each plugin its own token accounting, triggers, history selection, input preparation, summarization, retries, and recovery.
 
 `core` provides DSH service integration, model calls, file reads, and session transactions. Each plugin owns its compaction algorithm. DSH supplies the interface, tool runtime, and session storage used by the adapted workflow.
 
-## Six independent plugins
+## Seven independent plugins
 
 | Plugin | Main workflow |
 | --- | --- |
 | [`dsh-context-claude-code`](packages/claude-code/README.md) | Usage anchors, idle microcompaction, full summaries, retries over complete message groups, file and skill recovery, failure limits |
+| [`dsh-context-codex`](packages/codex/README.md) | Usage anchors, local summaries, newest user-text retention, UTF-8 truncation, paired input reduction on summary overflow, retry backoff |
 | [`dsh-context-opencode`](packages/opencode/README.md) | Native budgets, optional tool pruning, whole-turn and partial-turn retention, summary merging, user messages and attachments after overflow |
 | [`dsh-context-pi`](packages/pi/README.md) | Native estimates and usage, cut selection, separate history and turn-prefix summaries, cumulative file lists, branch summaries, transient-error backoff |
 | [`dsh-context-qwen-code`](packages/qwen-code/README.md) | Idle and size-based microcompaction, screenshot triggers, XML validation, summary-model fallback, file and image recovery, HTTP 413 handling |
@@ -21,6 +22,8 @@ Each package implements its workflow in `src/pipeline.ts`. Its exported `createP
 
 The Claude Code reference is an unofficial reconstruction of version 2.1.88 and cannot establish the complete official implementation. Each package README identifies the parts that require native host support. Cache APIs, REPL state, and log locations are reported only when the host actually provides them.
 
+The Codex plugin implements the local summary workflow. Its [README](packages/codex/README.md#host-adaptation-and-limits) describes the native Codex modes that require additional host capabilities.
+
 ## Build and check
 
 Requires Node.js `^22.19.0 || >=24.0.0` and pnpm `11.9.0`.
@@ -30,7 +33,7 @@ pnpm install
 pnpm check
 ```
 
-`check` builds every package and runs workflow tests, integration tests using real Cordis/Session/LLM services, and package checks. Tests use controlled model adapters and need no API key. `pnpm compare` compares the six packages' budget metadata; it does not evaluate model summary quality.
+`check` builds every package and runs workflow tests, integration tests using real Cordis/Session/LLM services, and package checks. Tests use controlled model adapters and need no API key. `pnpm compare` compares the seven plugins' budget metadata; it does not evaluate model summary quality.
 
 ## Use with DSH
 

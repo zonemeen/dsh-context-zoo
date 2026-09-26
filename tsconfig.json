@@ -8,6 +8,9 @@
       "path": "packages/claude-code"
     },
     {
+      "path": "packages/codex"
+    },
+    {
       "path": "packages/opencode"
     },
     {

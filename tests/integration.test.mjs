@@ -19,6 +19,7 @@ import { validateStoredEvents } from '@deepseek-ai/dsh-session-persistence';
 import piPlugin from '../packages/pi/dist/index.js';
 import FileSystem from '@deepseek-ai/dsh-fs';
 import claudePlugin from '../packages/claude-code/dist/index.js';
+import codexPlugin from '../packages/codex/dist/index.js';
 import openCodePlugin from '../packages/opencode/dist/index.js';
 import qwenPlugin from '../packages/qwen-code/dist/index.js';
 import zcodePlugin from '../packages/zcode/dist/index.js';
@@ -101,7 +102,7 @@ function seedConversation(session, openTurn, firstTurn = 1) {
   if (openTurn) session.append('turn/start', { turn: firstTurn + 3 });
 }
 
-async function harness(t, { mode, onStream, openTurn = true, config = {}, plugin = piPlugin } = {}) {
+async function harness(t, { mode, onStream, openTurn = true, config = {}, plugin = piPlugin, seed } = {}) {
   const ctx = new Context();
   t.after(() => ctx.fiber.dispose());
   await ctx.plugin(LlmRuntime);
@@ -118,8 +119,8 @@ async function harness(t, { mode, onStream, openTurn = true, config = {}, plugin
     maxSummaryTokens: 500,
     ...config,
   });
-  const session = ctx.sessions.create(SessionId('integration-session'));
-  seedConversation(session, openTurn);
+  const session = ctx.sessions.create(SessionId('integration-session'), seed === undefined ? undefined : { seed });
+  if (seed === undefined) seedConversation(session, openTurn);
   const maintenance = { calls: 0, released: 0 };
   const maintenanceSignal = new AbortController().signal;
   const agent = {
@@ -481,8 +482,8 @@ test('branch integration calls the selected plugin under maintenance and persist
   validateStoredEvents(session.header, structuredClone(session.snapshotEvents()));
 });
 
-test('all six packages execute their manual flow through real DSH services and survive stored-event validation', async t => {
-  for (const [name, plugin] of [['claude', claudePlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
+test('all seven packages execute their manual flow through real DSH services and survive stored-event validation', async t => {
+  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
     await t.test(name, async subtest => {
       const { ctx, session, agent } = await harness(subtest, { plugin, mode: name === 'qwen' ? 'xml' : 'success', openTurn: false });
       const original = session.deriveMessages();
@@ -540,7 +541,7 @@ test('source state remains available after session reconstruction', async t => {
 });
 
 test('each pipeline can compact again after a mid-history system update without removing it', async t => {
-  for (const [name, plugin] of [['claude', claudePlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
+  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
     await t.test(name, async subtest => {
       const { ctx, session, agent } = await harness(subtest, { plugin, mode: name === 'qwen' ? 'xml' : 'success', openTurn: false });
       const firstSystem = session.surface.nodes[0];
@@ -596,4 +597,102 @@ test('a recovered auxiliary failure does not masquerade as a single model call',
   const receipts = session.snapshotEvents().filter(event => event.type === 'context-zoo/state');
   assert.equal(receipts.filter(event => event.data.kind === 'model-request').length, 2);
   assert.ok(receipts.some(event => event.data.kind === 'model-error'));
+});
+
+test('Codex pre-step compaction keeps system context in its logged summary request', async t => {
+  const { ctx, session, agent, adapter } = await harness(t, {
+    plugin: codexPlugin,
+    config: { auto: true, summarizationProvider: 'summary-fixture', summarizationModel: 'checkpoint-model' },
+  });
+  const original = session.deriveMessages();
+  const decision = { kind: 'enter', messages: [] };
+  const result = await ctx.waterfall('agent/pre-step', {
+    agent, turn: 4, step: 1, messages: [], signal: new AbortController().signal,
+  }, async () => {
+    assert.equal(compactionEvents(session).at(-1)?.type, 'compaction/end');
+    return decision;
+  });
+  assert.equal(result, decision);
+  assert.equal(adapter.requests.length, 1);
+  const request = adapter.requests[0];
+  assert.equal(request.provider, 'summary-fixture');
+  assert.equal(request.model, 'checkpoint-model');
+  assert.equal(request.tools, undefined);
+  assert.ok(request.messages.some(message => message.role === 'system' && message.content[0].text === SYSTEM));
+  assert.ok(request.messages.some(message => message.role === 'tool'));
+  assert.deepEqual(session.deriveMessages()[0], original[0]);
+  assertToolPairs(session.deriveMessages());
+  const durable = structuredClone(session.snapshotEvents());
+  validateStoredEvents(session.header, durable);
+  assert.ok(durable.some(event => event.type === 'context-zoo/state' && event.data.plugin === 'codex' && event.data.kind === 'model-request'));
+});
+
+test('Codex retained user input survives restoration and another compaction', async t => {
+  const { ctx, session, agent } = await harness(t, { plugin: codexPlugin, openTurn: false, config: { keepRecentTokens: 20_000 } });
+  assert.ok(await ctx.compaction.compactNow(agent, new AbortController().signal));
+  const durable = structuredClone(session.snapshotEvents());
+  validateStoredEvents(session.header, durable);
+  const continued = await harness(t, { plugin: codexPlugin, seed: durable, config: { keepRecentTokens: 20_000 } });
+  const restored = continued.session;
+  seedConversation(restored, false, 4);
+  assert.ok(await continued.ctx.compaction.compactNow(continued.agent, new AbortController().signal));
+  const content = restored.deriveMessages().flatMap(message => message.content).filter(block => block.type === 'text').map(block => block.text).join('\n');
+  for (let turn = 1; turn <= 6; turn++) assert.ok(content.includes(`Request ${turn}:`), `retained user input ${turn}`);
+  const events = structuredClone(restored.snapshotEvents());
+  validateStoredEvents(restored.header, events);
+  const reloaded = Session.create(restored.id, events, restored.header, restored.inheritedEventCount, ctx.sessions.messageProjections);
+  assert.deepEqual(reloaded.deriveMessages(), restored.deriveMessages());
+});
+
+test('Codex summary failure leaves the selected history unchanged', async t => {
+  for (const mode of ['empty', 'truncated', 'error']) {
+    await t.test(mode, async subtest => {
+      const { ctx, session, agent, adapter } = await harness(subtest, {
+        plugin: codexPlugin, mode, openTurn: false, config: { maxSummaryAttempts: 1, summaryRetryDelayMs: 0 },
+      });
+      const original = session.deriveMessages();
+      await assert.rejects(ctx.compaction.compactNow(agent, new AbortController().signal));
+      assert.equal(adapter.requests.length, 1);
+      assert.deepEqual(session.deriveMessages(), original);
+      assert.equal(compactionEvents(session).at(-1).type, 'compaction/end');
+      validateStoredEvents(session.header, structuredClone(session.snapshotEvents()));
+    });
+  }
+});
+
+test('Codex delegates ordinary request overflow to the host without a compaction retry', async t => {
+  const { ctx, session, agent, adapter } = await harness(t, { plugin: codexPlugin, config: { auto: true } });
+  const original = session.snapshotEvents();
+  for (const failure of [
+    { code: CONTEXT_WINDOW_EXCEEDED_CODE, message: 'Context window exceeded.' },
+    { code: 'REQUEST_TOO_LARGE', status: 413, message: 'Request too large.' },
+  ]) {
+    let delegated = false;
+    const result = await ctx.waterfall('agent/request-error', {
+      agent, turn: 4, step: 1, provider: 'fixture', retryPolicy: undefined,
+      signal: new AbortController().signal, failure,
+    }, async () => { delegated = true; return undefined; });
+    assert.equal(result, undefined);
+    assert.equal(delegated, true);
+  }
+  assert.equal(adapter.requests.length, 0);
+  assert.deepEqual(session.snapshotEvents(), original);
+});
+
+
+test('Codex explicit range checkpoints retain user input after restore and another compaction', async t => {
+  const { ctx, session, agent } = await harness(t, { plugin: codexPlugin, config: { keepRecentTokens: 20_000 } });
+  const start = session.surface.nodes.find(seq => session.deriveEventMessage(session.eventAt(seq))?.role === 'user');
+  const end = session.surface.nodes.at(-1);
+  assert.ok(await ctx.compaction.compactRegion(start, end, agent, new AbortController().signal));
+  session.append('turn/end', { turn: 4, reason: { kind: 'completed' } });
+  const durable = structuredClone(session.snapshotEvents());
+  validateStoredEvents(session.header, durable);
+  const continued = await harness(t, { plugin: codexPlugin, seed: durable, config: { keepRecentTokens: 20_000 } });
+  const restored = continued.session;
+  seedConversation(restored, false, 5);
+  assert.ok(await continued.ctx.compaction.compactNow(continued.agent, new AbortController().signal));
+  const content = restored.deriveMessages().flatMap(message => message.content).filter(block => block.type === 'text').map(block => block.text).join('\n');
+  for (const turn of [1, 2, 3, 5, 6, 7]) assert.ok(content.includes(`Request ${turn}:`), `retained user input ${turn}`);
+  validateStoredEvents(restored.header, structuredClone(restored.snapshotEvents()));
 });

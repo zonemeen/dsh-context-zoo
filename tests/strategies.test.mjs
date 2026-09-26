@@ -1,21 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as claudeCode from '../packages/claude-code/dist/index.js';
+import * as codex from '../packages/codex/dist/index.js';
 import * as opencode from '../packages/opencode/dist/index.js';
 import * as pi from '../packages/pi/dist/index.js';
 import * as qwenCode from '../packages/qwen-code/dist/index.js';
 import * as zcode from '../packages/zcode/dist/index.js';
 import * as kimiCode from '../packages/kimi-code/dist/index.js';
 
-const modules = [claudeCode, opencode, pi, qwenCode, zcode, kimiCode];
+const modules = [claudeCode, codex, opencode, pi, qwenCode, zcode, kimiCode];
 const window200k = { contextWindow: 200_000, maxOutputTokens: 32_000 };
 
 test('each agent exposes a separately selectable strategy and plugin', () => {
   assert.deepEqual(modules.map(({ strategy }) => strategy.id), [
-    'claude-code', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code',
+    'claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code',
   ]);
-  assert.equal(new Set(modules.map(({ strategy }) => strategy)).size, 6);
-  assert.equal(new Set(modules.map(({ default: plugin }) => plugin)).size, 6);
+  assert.equal(new Set(modules.map(({ strategy }) => strategy)).size, 7);
+  assert.equal(new Set(modules.map(({ default: plugin }) => plugin)).size, 7);
   for (const { default: plugin } of modules) {
     assert.ok(plugin !== null && ['object', 'function'].includes(typeof plugin));
   }
@@ -24,6 +25,7 @@ test('each agent exposes a separately selectable strategy and plugin', () => {
 test('source strategies retain their different thresholds in a 200k window', () => {
   const cases = [
     [claudeCode, 167_000, 0],
+    [codex, 180_000, 20_000],
     [opencode, 168_000, 15_000],
     [pi, 183_616, 20_000],
     [qwenCode, 167_000, 0],
@@ -40,7 +42,7 @@ test('source strategies retain their different thresholds in a 200k window', () 
 });
 
 test('explicit reserve and retention values replace the source defaults', () => {
-  const expectedThresholds = [177_000, 190_000, 190_000, 170_000, 177_000, 170_000];
+  const expectedThresholds = [177_000, 180_000, 190_000, 190_000, 170_000, 177_000, 170_000];
   for (const [index, { strategy }] of modules.entries()) {
     const budget = strategy.budget({ ...window200k, reserveTokens: 10_000, keepRecentTokens: 1_234 });
     assert.equal(budget.triggerTokens, expectedThresholds[index], strategy.id);
@@ -49,7 +51,7 @@ test('explicit reserve and retention values replace the source defaults', () => 
 });
 
 test('ratio overrides preserve each source strategy’s reserve and ceiling rules', () => {
-  const expectedThresholds = [95_000, 95_000, 95_000, 100_000, 100_000, 100_000];
+  const expectedThresholds = [95_000, 100_000, 95_000, 95_000, 100_000, 100_000, 100_000];
   for (const [index, { strategy }] of modules.entries()) {
     const budget = strategy.budget({
       ...window200k,
@@ -99,6 +101,7 @@ test('Kimi ignores a reserve that would consume the entire window', () => {
 
 test('source references link original projects and preserve inspected local revisions', () => {
   const sources = [
+    [codex, 'https://github.com/openai/codex', 'e72da2b53805894878023d01949a25a082e0a5cb', 'Apache-2.0'],
     [opencode, 'https://github.com/anomalyco/opencode', 'beb99270834db8eb62cf3a369e99234d4d4c2cbd', 'MIT'],
     [pi, 'https://github.com/earendil-works/pi', '8a7b0c03dfb702663acafb6dc29f8acaa4ffe391', 'MIT'],
     [qwenCode, 'https://github.com/QwenLM/qwen-code', '151a6bc5aff6287264f81968efb7a19c37f3c03e', 'Apache-2.0'],
@@ -115,9 +118,10 @@ test('source references link original projects and preserve inspected local revi
 });
 
 test('summary instructions preserve source-specific continuation information', () => {
-  assert.equal(new Set(modules.map(({ strategy }) => strategy.summaryInstructions)).size, 6);
+  assert.equal(new Set(modules.map(({ strategy }) => strategy.summaryInstructions)).size, 7);
   const expectations = [
     [claudeCode, /User corrections/, /permission limits/],
+    [codex, /completed work/, /unresolved requests/],
     [opencode, /## Work State/, /## Relevant Files/],
     [pi, /## Constraints & Preferences/, /## Key Decisions/],
     [qwenCode, /failures_and_fixes/, /pending_tasks/],

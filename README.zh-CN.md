@@ -2,15 +2,16 @@
 
 [English](README.md) | 简体中文
 
-把 Claude Code、OpenCode、Pi、Qwen Code、ZCode 和 Kimi Code 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件独立拥有计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
+把 Claude Code、Codex、OpenCode、Pi、Qwen Code、ZCode 和 Kimi Code 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件独立拥有计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
 
-`core` 只负责 DSH 服务接入、模型调用、文件读取和会话提交。六个插件没有继承通用压缩算法；原始 agent 的界面、工具运行时和会话文件格式由 DSH 的对应能力承接。
+`core` 只负责 DSH 服务接入、模型调用、文件读取和会话提交。七个插件没有继承通用压缩算法；原始 agent 的界面、工具运行时和会话文件格式由 DSH 的对应能力承接。
 
-## 六个独立插件
+## 七个独立插件
 
 | 插件 | 主要流程 |
 | --- | --- |
 | [`dsh-context-claude-code`](packages/claude-code/README.zh-CN.md) | usage 锚点、空闲微压缩、全量摘要、整组溢出重试、文件与技能恢复、失败熔断 |
+| [`dsh-context-codex`](packages/codex/README.zh-CN.md) | usage 锚点、本地摘要、最近用户文本保留、UTF-8 截断、摘要溢出的成对缩减、退避重试 |
 | [`dsh-context-opencode`](packages/opencode/README.zh-CN.md) | 原生预算、可选工具清理、整轮与轮内尾部保留、摘要合并、溢出后的用户消息与附件处理 |
 | [`dsh-context-pi`](packages/pi/README.zh-CN.md) | 原生估算与 usage、切点选择、历史和回合前缀双摘要、累计文件清单、分支摘要、临时错误退避 |
 | [`dsh-context-qwen-code`](packages/qwen-code/README.zh-CN.md) | 空闲与体积微压缩、截图触发、XML 摘要验证、摘要模型回退、文件和图片恢复、413 特例 |
@@ -21,6 +22,8 @@
 
 Claude Code 参考的是非官方 2.1.88 还原代码，不能代表官方完整实现。各包 README 明确列出需要原生宿主配合的部分；未提供的缓存接口、REPL 状态或日志路径不会被伪装成已恢复。
 
+Codex 插件实现本地摘要流程。[插件说明](packages/codex/README.zh-CN.md#宿主适配与限制) 列出了需要额外宿主能力的原生 Codex 模式。
+
 ## 构建与检查
 
 需要 Node.js `^22.19.0 || >=24.0.0`、pnpm `11.9.0`。
@@ -30,7 +33,7 @@ pnpm install
 pnpm check
 ```
 
-`check` 构建所有包，运行源流程测试、真实 Cordis/Session/LLM 接入测试和包结构检查。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较六包的预算元数据，不衡量模型摘要质量。
+`check` 构建所有包，运行源流程测试、真实 Cordis/Session/LLM 接入测试和包结构检查。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较七个插件的预算元数据，不衡量模型摘要质量。
 
 ## 接入 DSH
 
