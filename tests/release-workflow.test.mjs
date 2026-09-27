@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const releaseBin = join(root, 'node_modules/release-it/bin/release-it.js');
-const ids = ['core', 'claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const ids = ['core', 'claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 // Fixture manifests intentionally have no install; pnpm 11 must not repair their linked dependencies.
 const environment = { ...process.env, CI: 'true', PNPM_MANAGE_PACKAGE_MANAGER_VERSIONS: 'false', pnpm_config_verify_deps_before_run: 'false', GIT_TERMINAL_PROMPT: '0' };
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: environment }).trim();

@@ -20,7 +20,7 @@ import { assertToolPairs } from '../tests/helpers/context-harness.mjs';
 import { seedQualityConversation, recallPrompt, scoreRecall } from '../tests/helpers/deepseek-quality-fixture.mjs';
 
 const { values } = parseArgs({ options: { 'key-stdin': { type: 'boolean' }, 'skip-baseline': { type: 'boolean' }, model: { type: 'string', default: 'deepseek-flash' }, output: { type: 'string' }, agent: { type: 'string' }, 'max-summary-tokens': { type: 'string', default: '2048' } } });
-const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 if (values.agent && !ids.includes(values.agent)) throw new Error('Unknown context plugin id.');
 const selectedIds = values.agent ? [values.agent] : ids;
 const maxSummaryTokens = Number(values['max-summary-tokens']);
@@ -46,7 +46,7 @@ const originalFetch = globalThis.fetch;
 const requests = [];
 let phase = 'baseline';
 const started = Date.now();
-const report = { startedAt: new Date().toISOString(), provider, model, settings, limits: { httpRequests: 18, requestTimeoutMs: 90000 }, credentialStorage: 'Process memory only; no credential file written.', scope: 'Synthetic text-only history; manual compaction and post-replay recall. Not a full application launch, default-threshold or actual context-overflow test.', requests, results: [] };
+const report = { startedAt: new Date().toISOString(), provider, model, settings, limits: { httpRequests: 18, requestTimeoutMs: 90000 }, credentialStorage: 'Supplied via environment or stdin; the runner does not write credentials to reports, session records, or DSH profiles.', scope: 'Synthetic text-only history; manual compaction and post-replay recall. Not a full application launch, default-threshold or actual context-overflow test.', requests, results: [] };
 const safeError = error => String(error instanceof Error ? error.message : error).replaceAll(key, '[REDACTED]');
 
 globalThis.fetch = async (input, init = {}) => {

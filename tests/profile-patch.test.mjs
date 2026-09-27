@@ -26,7 +26,7 @@ function applyPatches(entries, patches) {
   return applyEntryPatches(entries, patches, (message, ...args) => assert.fail(`${message}: ${args.join(', ')}`));
 }
 
-for (const id of ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code']) {
+for (const id of ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline']) {
   test(`${id} replaces a host engine and disables its native pruner`, () => {
     const entries = [native, command, pruner];
     const original = structuredClone(entries);

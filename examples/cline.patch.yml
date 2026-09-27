@@ -1,0 +1,16 @@
+# For the shipped DSH headless profile only; install dsh-context-cline first.
+# Run: dsh --profile headless --patch ./examples/cline.patch.yml "Your task"
+# For Web or customized profiles, use scripts/create-profile-patch.mjs instead.
+- id: compaction-basic
+  name: '@deepseek-ai/dsh-compaction-basic'
+  disabled: true
+- id: tool-result-pruner
+  name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+  disabled: true
+- insert:
+    - id: context-zoo
+      name: cordis:group
+      group: true
+      config:
+        - id: context-zoo-engine
+          name: dsh-context-cline

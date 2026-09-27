@@ -2,7 +2,7 @@
 
 [English](publishing.md) | 简体中文
 
-在仓库根目录执行维护命令，需要 Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` 和 pnpm `11.9.0`。根包保持私有，以下八个公开包使用统一版本号：
+在仓库根目录执行维护命令，需要 Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` 和 pnpm `11.9.0`。根包保持私有，以下九个公开包使用统一版本号：
 
 - `dsh-context-core`
 - `dsh-context-claude-code`
@@ -12,6 +12,7 @@
 - `dsh-context-qwen-code`
 - `dsh-context-zcode`
 - `dsh-context-kimi-code`
+- `dsh-context-cline`
 
 这些无 scope 包名不需要 npm 组织。你的 npm 账号仍需有权发布每个包名；首次发布前，包名的可用状态可能变化。已发布包的 Node.js 要求仍为 `^22.19.0 || >=24.0.0`。
 
@@ -27,7 +28,7 @@
 
 ## GitHub Actions 配置
 
-1. 创建 npm granular access token，授予包的读写权限、全部八个包名的发布权限，并启用 **Bypass two-factor authentication**，以便无人值守发布。首次发布时，权限必须允许创建新包。参见 [npm CI 认证指南](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow/)。
+1. 创建 npm granular access token，授予包的读写权限、全部九个包名的发布权限，并启用 **Bypass two-factor authentication**，以便无人值守发布。首次发布时，权限必须允许创建新包。参见 [npm CI 认证指南](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow/)。
 2. 在仓库的 [Settings → Secrets and variables → Actions](https://github.com/zonemeen/dsh-context-zoo/settings/secrets/actions) 中添加名为 **`NPM_TOKEN`** 的 Actions Secret。Token 只保存在 GitHub Secrets 中，不写入仓库文件或命令参数，并在到期前更新。
 3. 将发布配置、工作流和包的修改提交并推送到 `main`。本地 `main` 需要跟踪 `origin/main`，Git 凭证需要有提交和标签的推送权限。仓库分支规则也需要允许将发布提交推送到 `main`。
 
@@ -41,7 +42,7 @@ pnpm release:check
 pnpm release --dry-run
 ```
 
-`release:check` 会构建所有包、运行无需密钥的测试，将八个 npm 压缩包生成到 `.artifacts/npm/`，并检查实际内容。检查项包括统一版本、构建入口、许可证、README、workspace 依赖范围转换，以及打包后的配置生成器。CI 和发布工作流执行相同检查。打包不会发布任何包。
+`release:check` 会构建所有包、运行无需密钥的测试，将九个 npm 压缩包生成到 `.artifacts/npm/`，并检查实际内容。检查项包括统一版本、构建入口、许可证、README、workspace 依赖范围转换，以及打包后的配置生成器。CI 和发布工作流执行相同检查。打包不会发布任何包。
 
 core 压缩包包含 `dsh-context-patch` 和 `dist/compat/` 中的 Session 兼容文件。源码随 source map 一起发布，仓库测试、报告和构建状态文件不进入压缩包。
 
@@ -57,7 +58,7 @@ pnpm release
 
 在终端选择 patch、minor、major、预发布或自定义版本。选好版本后，命令自动完成：
 
-1. 更新根目录和八个包的版本号，保留 `workspace:^` 引用。
+1. 更新根目录和九个包的版本号，保留 `workspace:^` 引用。
 2. 针对所选版本执行 `pnpm release:check`。
 3. 创建 `chore: release v<version>` 提交和带注释的 `v<version>` 标签。
 4. 通过一次原子推送，将 `main` 和该标签推到 `origin`。任一更新被拒绝时，两者都不会推送。
@@ -72,7 +73,7 @@ pnpm release --no-increment
 
 ## GitHub Actions 发布
 
-推送 `v*` 标签会启动 [Publish npm](../.github/workflows/publish.yml)。任务检查标签与根包版本是否一致、对应提交是否属于 `main`，执行发布检查，将八个已验证压缩包上传为工作流产物，然后按依赖顺序发布：先 core，后七个插件。私有根包会跳过，稳定版本使用 npm 的 `latest` 标签，预发布版本使用 `next`。
+推送 `v*` 标签会启动 [Publish npm](../.github/workflows/publish.yml)。任务检查标签与根包版本是否一致、对应提交是否属于 `main`，执行发布检查，将九个已验证压缩包上传为工作流产物，然后按依赖顺序发布：先 core，后八个插件。私有根包会跳过，稳定版本使用 npm 的 `latest` 标签，预发布版本使用 `next`。
 
 只有发布步骤会收到 `NPM_TOKEN`。所有包公开发布到官方 npm registry，pnpm 将 `workspace:^` 转换为对应 core 版本的依赖范围。在仓库的 [Actions 页面](https://github.com/zonemeen/dsh-context-zoo/actions/workflows/publish.yml) 查看结果；本地推送成功表示任务已触发，不代表 npm 发布已经完成。
 
@@ -80,14 +81,14 @@ pnpm release --no-increment
 
 ## 从本机发布
 
-先提交发布配置的修改。在跟踪 `origin/main`、工作区干净的 `main` 分支执行，并确保已安装当前依赖。使用有权发布全部八个包名的账号登录官方 npm registry：
+先提交发布配置的修改。在跟踪 `origin/main`、工作区干净的 `main` 分支执行，并确保已安装当前依赖。使用有权发布全部九个包名的账号登录官方 npm registry：
 
 ```sh
 npm login --registry=https://registry.npmjs.org/
 pnpm release:local
 ```
 
-在终端选择版本。命令复用 Actions 方式的版本更新与发布检查，创建本地版本提交和标签，然后使用本机 npm 登录凭证按依赖顺序发布八个包。npm 认证提示和 registry 错误会直接显示在终端，按提示完成验证，无需配置 GitHub 的 `NPM_TOKEN` Secret。命令会获取远端 Git 状态用于校验，但不会推送提交或标签。
+在终端选择版本。命令复用 Actions 方式的版本更新与发布检查，创建本地版本提交和标签，然后使用本机 npm 登录凭证按依赖顺序发布九个包。npm 认证提示和 registry 错误会直接显示在终端，按提示完成验证，无需配置 GitHub 的 `NPM_TOKEN` Secret。命令会获取远端 Git 状态用于校验，但不会推送提交或标签。
 
 首次发布 `0.1.0`，或仅预览本地发布流程：
 

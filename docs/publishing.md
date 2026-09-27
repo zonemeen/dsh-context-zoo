@@ -2,7 +2,7 @@
 
 English | [简体中文](publishing.zh-CN.md)
 
-Run maintainer commands from the repository root with Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` and pnpm `11.9.0`. The root package stays private. The eight public packages share one version:
+Run maintainer commands from the repository root with Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` and pnpm `11.9.0`. The root package stays private. The nine public packages share one version:
 
 - `dsh-context-core`
 - `dsh-context-claude-code`
@@ -12,6 +12,7 @@ Run maintainer commands from the repository root with Node.js `^22.22.2 || ^24.1
 - `dsh-context-qwen-code`
 - `dsh-context-zcode`
 - `dsh-context-kimi-code`
+- `dsh-context-cline`
 
 The unscoped names require no npm organization. Your npm account must have permission to publish each name. Registry availability can change before the first release. Published packages retain their Node.js requirement of `^22.19.0 || >=24.0.0`.
 
@@ -27,7 +28,7 @@ Both publishing routes use `latest` for stable versions and `next` for prereleas
 
 ## GitHub Actions setup
 
-1. Create an npm granular access token with package read/write access, permission to publish all eight names, and **Bypass two-factor authentication** enabled for unattended publishing. For the first release, its permissions must allow creating new packages. See [npm's CI authentication guide](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow/).
+1. Create an npm granular access token with package read/write access, permission to publish all nine names, and **Bypass two-factor authentication** enabled for unattended publishing. For the first release, its permissions must allow creating new packages. See [npm's CI authentication guide](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow/).
 2. Add it as the repository Actions secret **`NPM_TOKEN`** in [Settings → Secrets and variables → Actions](https://github.com/zonemeen/dsh-context-zoo/settings/secrets/actions). Keep the value in GitHub Secrets; do not put it in repository files or command arguments. Renew it before expiry.
 3. Commit and push the release configuration, workflow, and package changes to `main`. The local `main` branch must track `origin/main`, and your Git credentials must permit pushing commits and tags. Repository branch rules must allow the release commit to be pushed to `main`.
 
@@ -41,7 +42,7 @@ pnpm release:check
 pnpm release --dry-run
 ```
 
-`release:check` builds all packages, runs keyless tests, packs the eight npm archives into `.artifacts/npm/`, and inspects their contents. It checks matching versions, built entry points, licenses, README files, converted workspace dependency ranges, and the packaged profile generator. CI and the publishing workflow run the same check. Packing does not publish anything.
+`release:check` builds all packages, runs keyless tests, packs the nine npm archives into `.artifacts/npm/`, and inspects their contents. It checks matching versions, built entry points, licenses, README files, converted workspace dependency ranges, and the packaged profile generator. CI and the publishing workflow run the same check. Packing does not publish anything.
 
 The core archive includes `dsh-context-patch` and the Session compatibility files in `dist/compat/`. Sources accompany source maps. Repository tests, reports, and build-state files are excluded from the archives.
 
@@ -57,7 +58,7 @@ pnpm release
 
 Select patch, minor, major, prerelease, or a custom version in the terminal. After version selection, the command automatically:
 
-1. Updates the root and eight package manifests, preserving `workspace:^` references.
+1. Updates the root and nine package manifests, preserving `workspace:^` references.
 2. Runs `pnpm release:check` against the selected version.
 3. Creates a `chore: release v<version>` commit and an annotated `v<version>` tag.
 4. Pushes `main` and that tag to `origin` in one atomic push. If either update is rejected, neither is pushed.
@@ -72,7 +73,7 @@ This still runs the checks and creates the release tag; a version-only commit is
 
 ## GitHub Actions publication
 
-Pushing a `v*` tag starts [Publish npm](../.github/workflows/publish.yml). The job checks that the tag matches the root version and its commit belongs to `main`, runs the release checks, uploads the eight verified archives as a workflow artifact, and publishes packages in dependency order: core before the seven plugins. The private root is skipped. Stable versions use npm's `latest` tag; prereleases use `next`.
+Pushing a `v*` tag starts [Publish npm](../.github/workflows/publish.yml). The job checks that the tag matches the root version and its commit belongs to `main`, runs the release checks, uploads the nine verified archives as a workflow artifact, and publishes packages in dependency order: core before the eight plugins. The private root is skipped. Stable versions use npm's `latest` tag; prereleases use `next`.
 
 The publish step alone receives `NPM_TOKEN`. All packages use the official npm registry with public access. pnpm converts `workspace:^` into the corresponding published core version range. Follow the result in the repository's [Actions page](https://github.com/zonemeen/dsh-context-zoo/actions/workflows/publish.yml); a successful local push starts the job but does not confirm npm publication.
 
@@ -80,14 +81,14 @@ If local checks fail, nothing is pushed; inspect any remaining version edits bef
 
 ## Publish from your machine
 
-Commit the setup changes before releasing. Start on a clean `main` branch that tracks `origin/main`, with current dependencies installed. Log in to the official npm registry using an account that can publish all eight package names:
+Commit the setup changes before releasing. Start on a clean `main` branch that tracks `origin/main`, with current dependencies installed. Log in to the official npm registry using an account that can publish all nine package names:
 
 ```sh
 npm login --registry=https://registry.npmjs.org/
 pnpm release:local
 ```
 
-Select the version in the terminal. The command uses the same version updates and release checks as the Actions route, creates a local release commit and tag, then publishes all eight packages in dependency order using your npm login. npm authentication prompts and registry errors appear directly in the terminal; complete any requested verification there. GitHub's `NPM_TOKEN` secret is not needed. The command fetches Git state for validation but does not push commits or tags.
+Select the version in the terminal. The command uses the same version updates and release checks as the Actions route, creates a local release commit and tag, then publishes all nine packages in dependency order using your npm login. npm authentication prompts and registry errors appear directly in the terminal; complete any requested verification there. GitHub's `NPM_TOKEN` secret is not needed. The command fetches Git state for validation but does not push commits or tags.
 
 For the first `0.1.0` release, or to preview the local route:
 

@@ -24,6 +24,9 @@
     },
     {
       "path": "packages/kimi-code"
+    },
+    {
+      "path": "packages/cline"
     }
   ]
 }

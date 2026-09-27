@@ -18,7 +18,7 @@ import { SummaryAdapter, seedConversation, assertToolPairs } from './helpers/con
 
 // Cordis exposes FiberState.Active as a TypeScript const enum, without a runtime export.
 const ACTIVE = 2;
-const agentIds = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const agentIds = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 const nativeEngine = '@deepseek-ai/dsh-compaction-basic';
 const nativePruner = '@deepseek-ai/dsh-compaction-tool-result-pruner';
 const contextConfig = { auto: true, reserveTokens: 0, thresholdRatio: 0.01, keepRecentTokens: 80, maxSummaryTokens: 500 };
@@ -160,7 +160,7 @@ for (const id of agentIds) {
   });
 }
 
-test('seven simultaneously mounted preset scopes dispatch only to their selected context engine', async t => {
+test('eight simultaneously mounted preset scopes dispatch only to their selected context engine', async t => {
   const { ctx, adapter } = await runtime(t);
   const presets = [];
   for (const id of agentIds) {

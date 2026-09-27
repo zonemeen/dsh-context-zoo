@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
-const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 for (const id of ['core', ...ids]) {
   const root = new URL(`../packages/${id}/`, import.meta.url);
   const manifest = JSON.parse(await readFile(new URL('package.json', root), 'utf8'));
@@ -19,4 +19,4 @@ for (const id of ['core', ...ids]) {
   assert.equal(typeof pipeline.run, 'function');
   assert.equal(typeof pipeline.summarizeRange, 'function');
 }
-console.log('All eight packages have built exports, licenses, and valid DSH bundle declarations.');
+console.log('All nine packages have built exports, licenses, and valid DSH bundle declarations.');

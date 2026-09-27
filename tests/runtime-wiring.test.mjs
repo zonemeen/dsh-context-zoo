@@ -9,10 +9,11 @@ import piPlugin from '../packages/pi/dist/index.js';
 import qwenPlugin from '../packages/qwen-code/dist/index.js';
 import zcodePlugin from '../packages/zcode/dist/index.js';
 import kimiPlugin from '../packages/kimi-code/dist/index.js';
+import clinePlugin from '../packages/cline/dist/index.js';
 import { harness, assertToolPairs } from './helpers/context-harness.mjs';
 import CommandRuntime from '@deepseek-ai/dsh-commands';
 import * as commandCompact from '@deepseek-ai/dsh-command-compact';
-const pluginCases = [['claude-code', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen-code', qwenPlugin], ['zcode', zcodePlugin], ['kimi-code', kimiPlugin]];
+const pluginCases = [['claude-code', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen-code', qwenPlugin], ['zcode', zcodePlugin], ['kimi-code', kimiPlugin], ['cline', clinePlugin]];
 
 for (const [id, plugin] of pluginCases) {
   test(id + ': real /compact dispatch reaches the selected engine and replays the durable replacement', async t => {

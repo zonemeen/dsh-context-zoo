@@ -20,6 +20,7 @@ import openCodePlugin from '../packages/opencode/dist/index.js';
 import qwenPlugin from '../packages/qwen-code/dist/index.js';
 import zcodePlugin from '../packages/zcode/dist/index.js';
 import kimiPlugin from '../packages/kimi-code/dist/index.js';
+import clinePlugin from '../packages/cline/dist/index.js';
 
 import { SUMMARY, SYSTEM, seedConversation, harness, compactionEvents, assertToolPairs } from './helpers/context-harness.mjs';
 
@@ -351,8 +352,8 @@ test('branch integration calls the selected plugin under maintenance and persist
   validateStoredEvents(session.header, structuredClone(session.snapshotEvents()));
 });
 
-test('all seven packages execute their manual flow through real DSH services and survive stored-event validation', async t => {
-  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
+test('all eight plugins execute their manual flow through real DSH services and survive stored-event validation', async t => {
+  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin], ['cline', clinePlugin]]) {
     await t.test(name, async subtest => {
       const { ctx, session, agent } = await harness(subtest, { plugin, mode: name === 'qwen' ? 'xml' : 'success', openTurn: false });
       const original = session.deriveMessages();
@@ -410,7 +411,7 @@ test('source state remains available after session reconstruction', async t => {
 });
 
 test('each pipeline can compact again after a mid-history system update without removing it', async t => {
-  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin]]) {
+  for (const [name, plugin] of [['claude', claudePlugin], ['codex', codexPlugin], ['opencode', openCodePlugin], ['pi', piPlugin], ['qwen', qwenPlugin], ['zcode', zcodePlugin], ['kimi', kimiPlugin], ['cline', clinePlugin]]) {
     await t.test(name, async subtest => {
       const { ctx, session, agent } = await harness(subtest, { plugin, mode: name === 'qwen' ? 'xml' : 'success', openTurn: false });
       const firstSystem = session.surface.nodes[0];

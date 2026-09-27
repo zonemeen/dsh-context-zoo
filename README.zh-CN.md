@@ -2,11 +2,11 @@
 
 [English](README.md) | 简体中文
 
-把 Claude Code、Codex、OpenCode、Pi、Qwen Code、ZCode 和 Kimi Code 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件负责计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
+把 Claude Code、Codex、OpenCode、Pi、Qwen Code、ZCode、Kimi Code 和 Cline 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件负责计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
 
-`core` 只负责 DSH 服务接入、模型调用、文件读取和会话提交。七个插件没有继承通用压缩算法；原始 agent 的界面、工具运行时和会话文件格式由 DSH 的对应能力承接。
+`core` 负责 DSH 服务接入、模型调用、文件读取和会话提交。八个插件分别实现各自的压缩算法；原始 agent 的界面、工具运行时和会话文件格式由 DSH 的对应能力承接。
 
-## 七个独立插件
+## 八个独立插件
 
 | 插件 | 主要流程 |
 | --- | --- |
@@ -17,8 +17,11 @@
 | [`dsh-context-qwen-code`](packages/qwen-code/README.zh-CN.md) | 空闲与体积微压缩、截图触发、XML 摘要验证、摘要模型回退、文件和图片恢复、413 特例 |
 | [`dsh-context-zcode`](packages/zcode/README.zh-CN.md) | assistant 轮次、按组微压缩、九节摘要、溢出缩减、计划与文件恢复、失败熔断 |
 | [`dsh-context-kimi-code`](packages/kimi-code/README.zh-CN.md) | 完整历史摘要、输入预缩减、模型溢出重试、原始用户输入恢复、TODO 和日志恢复信息 |
+| [`dsh-context-cline`](packages/cline/README.zh-CN.md) | 默认模型摘要、约 20k tokens 的最近历史、文件操作记录、摘要异常或上下文溢出时无需模型调用的回退 |
 
 每包的 `src/pipeline.ts` 是实际流程，`createPipeline()` 可配合独立宿主测试；`strategy` 导出固定来源与预算元数据。`strategy.source.url` 指向源项目，`revision` 和 `license` 描述实际参考的本地版本，包括 fork 和源码还原项目。ZCode 与 Kimi 已核对本地 clone，分别固定在 `29628c9`、`be7d5f5`。
+
+[Cline](https://github.com/cline/cline) 参考版本固定在提交 [`252082b9e93b4f91253876391e35b4c13326f5e6`](https://github.com/cline/cline/commit/252082b9e93b4f91253876391e35b4c13326f5e6)。
 
 Claude Code 参考的是非官方 2.1.88 还原代码，不能代表官方完整实现。各包 README 明确列出需要原生宿主配合的部分；未提供的缓存接口、REPL 状态或日志路径不会被伪装成已恢复。
 
@@ -33,7 +36,7 @@ pnpm install
 pnpm check
 ```
 
-`check` 构建所有包，运行源流程测试、包结构检查，以及经过真实 Cordis Loader 和 DSH 服务的接入测试，包括 `/compact` 和自动压缩。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较七个插件的预算元数据，不衡量模型摘要质量。
+`check` 构建所有包，运行源流程测试、包结构检查，以及经过真实 Cordis Loader 和 DSH 服务的接入测试，包括 `/compact` 和自动压缩。测试使用可控模型适配器，不需要 API key。`pnpm compare` 比较八个插件的预算元数据，不衡量模型摘要质量。
 
 如果本地已有 DSH 源码，可用仓库自带的 headless 和 Web 配置验证生成的覆盖补丁：
 
@@ -45,7 +48,7 @@ DSH_SOURCE_DIR=/path/to/deepseek-harness pnpm test:profiles
 
 ### DeepSeek 实际 API 检查与凭据
 
-[2026-09-26 实测结果](reports/deepseek/2026-09-26/README.zh-CN.md) 汇集了不同次执行中七个插件的最终观察，包含所选调用的 API 用量、测试范围与限制，以及汇总文件 `results.json`。
+[2026-09-26 实测结果](reports/deepseek/2026-09-26/README.zh-CN.md) 汇集了不同次执行中当时七个插件的最终观察，包含所选调用的 API 用量、测试范围与限制，以及汇总文件 `results.json`。Cline 已通过单独的 [2026-09-27 实际 API 检查](reports/deepseek/2026-09-27/README.zh-CN.md)，覆盖手动压缩、会话回放和 10/10 事实召回。上下文估算量从 5,506 降至 1,844 tokens，减少 66.5%。
 
 通过环境变量向测试进程提供 `DEEPSEEK_API_KEY` 后运行：
 
@@ -53,9 +56,9 @@ DSH_SOURCE_DIR=/path/to/deepseek-harness pnpm test:profiles
 pnpm test:deepseek
 ```
 
-[测试脚本](scripts/check-deepseek.mjs) 使用 DSH 官方 DeepSeek 适配器、`https://api.deepseek.com/anthropic` 和 `deepseek-flash`。先测压缩前的事实召回，再逐个运行七个插件的 `/compact`，从事件记录恢复会话后再次检查召回。测试使用合成的文本历史，最多发起 18 次 HTTP 请求，并设置 `keepRecentTokens: 256`、`maxSummaryAttempts: 1`，摘要输出上限默认为 `maxSummaryTokens: 2048`。这项检查覆盖手动压缩和召回；默认触发策略、实际上下文溢出和完整应用启动需要单独测试。token 缩减量为估算值，报告另行记录 API 用量。
+[测试脚本](scripts/check-deepseek.mjs) 使用 DSH 官方 DeepSeek 适配器、`https://api.deepseek.com/anthropic` 和 `deepseek-flash`。先测压缩前的事实召回，默认再逐个运行八个插件的 `/compact`，从事件记录恢复会话后再次检查召回。每个插件调用一次摘要模型时，完整运行需要 17 次 HTTP 请求，上限为 18 次。测试使用合成的文本历史，并设置 `keepRecentTokens: 256`、`maxSummaryAttempts: 1`，摘要输出上限默认为 `maxSummaryTokens: 2048`。这项检查覆盖手动压缩和召回；默认触发策略、实际上下文溢出和完整应用启动需要单独测试。token 缩减量为估算值，报告另行记录 API 用量。
 
-脚本将 `report.json` 写入临时结果目录，并打印路径。可用 `pnpm test:deepseek --output /absolute/path/to/results` 指定目录。密钥只留在进程内存中，不写入凭据文件或实际 DSH profile。
+脚本将 `report.json` 写入临时结果目录，并打印路径。可用 `pnpm test:deepseek --output /absolute/path/to/results` 指定目录。脚本从进程环境变量读取密钥，不写入凭据文件或实际 DSH profile。
 
 选择 Codex、将摘要上限设为 4,096 tokens，并跳过最初的未压缩召回基线：
 
@@ -65,17 +68,23 @@ pnpm test:deepseek --agent codex --max-summary-tokens 4096 --skip-baseline
 
 所选插件仍会执行 `/compact` 和会话回放后的召回检查。
 
+若要保存在本地文件，可在 Git 已忽略的 `.env.local` 中设置 `DEEPSEEK_API_KEY`。脚本不会自动加载 `.env` 文件，需要通过 Node 显式加载：
+
+```sh
+node --env-file=.env.local scripts/check-deepseek.mjs --agent cline
+```
+
 在 macOS 上长期保存密钥时，建议通过**钥匙串访问**创建密码项，服务/名称填 `dsh-context-zoo-deepseek`，账户填自己的登录用户名。在 GUI 中输入密钥，仅在启动测试时注入：
 
 ```sh
 DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo-deepseek -w)" pnpm test:deepseek
 ```
 
-这样 shell 历史中不会出现密钥原文。钥匙串由 macOS 管理；DSH 原生支持的存储是 `$DSH_HOME/.credentials.yaml`（默认 `~/.dsh/.credentials.yaml`），它是由 `0600` 权限保护的明文文件，没有加密或钥匙串接入。不要把凭据写入仓库文件；已在聊天中暴露的密钥应当轮换。
+这样 shell 历史中不会出现密钥原文。钥匙串由 macOS 管理；DSH 原生支持的存储是 `$DSH_HOME/.credentials.yaml`（默认 `~/.dsh/.credentials.yaml`），它是由 `0600` 权限保护的明文文件，没有加密或钥匙串接入。不要把凭据写入 Git 跟踪的文件；已在聊天中暴露的密钥应当轮换。
 
 ## 发布到 npm
 
-八个包使用统一版本，根包保持私有。在工作区干净的 `main` 分支选择以下命令，均会选择版本、更新全部包、检查、提交并打标签：
+九个包使用统一版本，根包保持私有。在工作区干净的 `main` 分支选择以下命令，均会选择版本、更新全部包、检查、提交并打标签：
 
 - `pnpm release`：推送版本，由 GitHub Actions 发布。需先配置仓库的 `NPM_TOKEN` Secret。
 - `pnpm release:local`：使用本机 npm 登录凭证发布，版本提交和标签保留在本地。
@@ -119,7 +128,7 @@ DSH 替换整个 `config` 对象，需要的设置应写在一起，并保留生
 
 完整配置见 [core README](packages/core/README.zh-CN.md)，默认值和适用字段见各插件 README。相同字段可以有不同算法语义，例如 Pi 的保留预算允许切开一个回合并额外摘要，而 ZCode 默认保留完整的最后一轮。
 
-`/compact` 调用当前插件自己的手动流程。摘要与恢复信息一起提交；失败、取消、输入改变或结果膨胀时不替换原历史。已完成的微压缩单独保留日志，原始消息仍可从 DSH 会话存储读取。
+`/compact` 调用当前插件自己的手动流程。摘要与恢复信息一起提交；流程最终失败、取消、输入改变或结果膨胀时不替换原历史。Cline 可在摘要异常后执行回退，无需再次调用模型。已完成的微压缩单独保留日志，原始消息仍可从 DSH 会话存储读取。
 
 ## 扩展与验证
 

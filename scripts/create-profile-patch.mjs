@@ -4,7 +4,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parse, stringify } from 'yaml';
 
-const agentIds = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const agentIds = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 const managedNames = new Set(agentIds.map(id => `dsh-context-${id}`));
 const nativeEngine = '@deepseek-ai/dsh-compaction-basic';
 const nativePruner = '@deepseek-ai/dsh-compaction-tool-result-pruner';
@@ -111,7 +111,7 @@ function inspectComposition(entries) {
  * Replace active native or zoo engines in a resolved profile and preserve every other setting.
  * Group and preset config overrides contain their full original config because DSH replaces it.
  * @param entries - The entry list printed by dsh --dump-config.
- * @param agentId - One of the seven context strategy ids.
+ * @param agentId - One of the supported context strategy ids.
  * @returns A loader patch list to apply after the profile's existing layers.
  */
 export function createProfilePatch(entries, agentId) {

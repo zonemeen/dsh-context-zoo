@@ -14,7 +14,7 @@ const version = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).ver
 assert.equal(version, '0.1.7-rc.2', 'These plugins target DSH 0.1.7-rc.2.');
 const require = createRequire(import.meta.resolve('@deepseek-ai/cordis-plugin-include'));
 const yaml = require('js-yaml');
-const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code'];
+const ids = ['claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 const nativeEngine = '@deepseek-ai/dsh-compaction-basic';
 const nativePruner = '@deepseek-ai/dsh-compaction-tool-result-pruner';
 const command = '@deepseek-ai/dsh-command-compact';

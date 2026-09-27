@@ -1,0 +1,320 @@
+{
+  "startedAt": "2026-09-27T05:51:09.058Z",
+  "provider": "deepseek-official",
+  "model": "deepseek-flash",
+  "settings": {
+    "auto": false,
+    "keepRecentTokens": 256,
+    "maxSummaryTokens": 2048,
+    "maxSummaryAttempts": 1,
+    "maxOverflowRetries": 0
+  },
+  "limits": {
+    "httpRequests": 18,
+    "requestTimeoutMs": 90000
+  },
+  "credentialStorage": "Supplied via environment or stdin; the runner does not write credentials to reports, session records, or DSH profiles.",
+  "scope": "Synthetic text-only history; manual compaction and post-replay recall. Not a full application launch, default-threshold or actual context-overflow test.",
+  "requests": [
+    {
+      "phase": "baseline",
+      "path": "/anthropic/v1/messages",
+      "startedAt": "2026-09-27T05:51:09.075Z",
+      "status": 200,
+      "headersReceivedMs": 205
+    },
+    {
+      "phase": "cline:summary",
+      "path": "/anthropic/v1/messages",
+      "startedAt": "2026-09-27T05:51:10.224Z",
+      "status": 200,
+      "headersReceivedMs": 95
+    },
+    {
+      "phase": "cline:recall",
+      "path": "/anthropic/v1/messages",
+      "startedAt": "2026-09-27T05:51:15.182Z",
+      "status": 200,
+      "headersReceivedMs": 90
+    }
+  ],
+  "results": [
+    {
+      "id": "cline",
+      "beforeEstimatedTokens": 5506,
+      "compactionElapsedMs": 4940,
+      "commandResult": {
+        "kind": "success",
+        "text": "Compacted 20 history items (~5003 tokens).",
+        "sourceEventSeq": 64
+      },
+      "afterEstimatedTokens": 1844,
+      "historyUnchanged": false,
+      "replaceGeneration": 1,
+      "summaryCalls": [
+        {
+          "callId": "cline:62",
+          "provider": "deepseek-official",
+          "model": "deepseek-flash",
+          "maxTokens": 2048,
+          "content": [
+            {
+              "type": "text",
+              "text": "## Goal\nUpdate the invoice import flow for approved idempotency, retry, cancellation, replay ownership, and tenant isolation behavior while keeping all work local. Use the final approved requirements in `docs/invoice-import-review.md`, not the historical 24-hour behavior in `src/invoices/import-invoice.ts`.\n\n## State\n- Historical source reviewed: `src/invoices/import-invoice.ts`. It contains the old implementation with global duplicate lookup and no finite transport recovery policy. The 24-hour idempotency retention is explicitly historical and superseded.\n- Final approved requirements reviewed: `docs/invoice-import-review.md`.\n- Working-tree patch reviewed: `reviews/invoice-import.diff`.\n- Gateway adapter reviewed: `src/invoices/gateway-client.ts`.\n- Local verification recorded:\n  - Command: `pnpm test -- invoice-import`\n  - Result: 17 passed, 1 skipped, 0 failed.\n  - Skipped case covers a real external gateway and requires separate credentials. It was not executed.\n- Current authorization constraints:\n  - Do not contact production.\n  - Do not apply any database migration during this task.\n- Migration artifact status:\n  - `migrations/20260926_invoice_import.sql` has been authored.\n  - It has not been applied.\n\n## Highlights\n- Final retention is 48 hours, explicitly superseding the earlier 24-hour value.\n- Request header must be exactly `Idempotency-Key`.\n- Retry only HTTP statuses 429, 502, 503, and 504.\n- Maximum attempts are 3 total, including the first attempt. There are not three retries.\n- Delays are 250 ms before the second attempt and 500 ms before the third attempt. No fourth attempt.\n- Retry operation belongs inside the gateway adapter. The controller should not add a second retry loop, and the invoice repository should not know HTTP statuses.\n- Gateway adapter must return a structured failure once permitted attempts are exhausted.\n- Caller cancellation should interrupt a pending delay and stop subsequent requests.\n- Validation failures remain local and do not enter retry.\n- Malformed successful responses are parsing failures and are not automatically eligible for the same recovery path as transient gateway conditions.\n- Authentication failures and permanent client errors should reach the caller without repeated requests.\n- Existing response envelope remains so UI consumers can continue to render domain errors in the same place.\n- Response replay path must resolve the current request’s ownership before returning any cached result.\n- Invoice domain records and idempotency response records have separate responsibilities. Their identities should not be collapsed into one database column.\n- Response records should retain enough response metadata for replay; invoice storage remains responsible for normalized monetary values and line items.\n- Reviewed repository changes:\n  - Uniqueness key is `tenant_id + external_invoice_id`.\n  - `findInvoice(tenantId, externalId)` now uses both tenant and external ID.\n  - `saveInvoice` uses a database transaction to create invoice and associated invoice lines.\n- Reviewed controller changes:\n  - Parses request identity.\n  - Fingerprints invoice.\n  - Looks up previous response by owner and identity.\n  - Returns conflict if previous fingerprint differs.\n  - Replays cached response if not expired.\n  - Calls importer with `{ signal: request.signal }`.\n  - Saves successful response with owner, identity, fingerprint, createdAt, and expiresAt.\n- Reviewed gateway adapter changes:\n  - Implements approved finite attempt schedule.\n  - Does not add a second retry loop above it.\n  - Stops retry on success or non-transient status.\n  - Returns `invalid-response` for malformed success payloads.\n  - Returns `exhausted` after transient status attempts are exhausted.\n  - `cancellableWait` removes cancellation listener after success or abort.\n- Local test coverage observed:\n  - PASS 01: empty invoice identifier.\n  - PASS 02: currency normalization.\n  - PASS 03: integer monetary values.\n  - PASS 04: line ordering.\n  - PASS 05: optional reference.\n  - PASS 06: duplicate reply replay.\n  - PASS 07: fingerprint conflict.\n  - Additional test details were omitted from the recorded output, but final result was 17 passed, 1 skipped, 0 failed.\n- Existing same-tenant replay tests do not cover the missing tenant isolation regression case.\n\n## Next\n- Add a tenant isolation regression test.\n- Do not mistake existing same-tenant replay tests for coverage of tenant isolation.\n- Continue local verification after adding the regression test.\n- Do not contact production.\n- Do not apply the migration.\n\n## Files\n- `src/invoices/import-invoice.ts` — historical source reviewed; old 24-hour idempotency behavior and global duplicate lookup.\n- `docs/invoice-import-review.md` — final approved requirements, revision B.\n- `reviews/invoice-import.diff` — working-tree repository/controller/schema changes reviewed.\n- `src/invoices/gateway-client.ts` — gateway adapter retry and cancellation behavior reviewed.\n- `migrations/20260926_invoice_import.sql` — migration authored but not applied.\n- `src/invoices/invoice-repository.ts` — reviewed in diff; tenant plus external invoice ID lookup and transactional save.\n- `src/invoices/import-controller.ts` — reviewed in diff; identity, fingerprint, replay, conflict, save response behavior."
+            }
+          ],
+          "text": "## Goal\nUpdate the invoice import flow for approved idempotency, retry, cancellation, replay ownership, and tenant isolation behavior while keeping all work local. Use the final approved requirements in `docs/invoice-import-review.md`, not the historical 24-hour behavior in `src/invoices/import-invoice.ts`.\n\n## State\n- Historical source reviewed: `src/invoices/import-invoice.ts`. It contains the old implementation with global duplicate lookup and no finite transport recovery policy. The 24-hour idempotency retention is explicitly historical and superseded.\n- Final approved requirements reviewed: `docs/invoice-import-review.md`.\n- Working-tree patch reviewed: `reviews/invoice-import.diff`.\n- Gateway adapter reviewed: `src/invoices/gateway-client.ts`.\n- Local verification recorded:\n  - Command: `pnpm test -- invoice-import`\n  - Result: 17 passed, 1 skipped, 0 failed.\n  - Skipped case covers a real external gateway and requires separate credentials. It was not executed.\n- Current authorization constraints:\n  - Do not contact production.\n  - Do not apply any database migration during this task.\n- Migration artifact status:\n  - `migrations/20260926_invoice_import.sql` has been authored.\n  - It has not been applied.\n\n## Highlights\n- Final retention is 48 hours, explicitly superseding the earlier 24-hour value.\n- Request header must be exactly `Idempotency-Key`.\n- Retry only HTTP statuses 429, 502, 503, and 504.\n- Maximum attempts are 3 total, including the first attempt. There are not three retries.\n- Delays are 250 ms before the second attempt and 500 ms before the third attempt. No fourth attempt.\n- Retry operation belongs inside the gateway adapter. The controller should not add a second retry loop, and the invoice repository should not know HTTP statuses.\n- Gateway adapter must return a structured failure once permitted attempts are exhausted.\n- Caller cancellation should interrupt a pending delay and stop subsequent requests.\n- Validation failures remain local and do not enter retry.\n- Malformed successful responses are parsing failures and are not automatically eligible for the same recovery path as transient gateway conditions.\n- Authentication failures and permanent client errors should reach the caller without repeated requests.\n- Existing response envelope remains so UI consumers can continue to render domain errors in the same place.\n- Response replay path must resolve the current request’s ownership before returning any cached result.\n- Invoice domain records and idempotency response records have separate responsibilities. Their identities should not be collapsed into one database column.\n- Response records should retain enough response metadata for replay; invoice storage remains responsible for normalized monetary values and line items.\n- Reviewed repository changes:\n  - Uniqueness key is `tenant_id + external_invoice_id`.\n  - `findInvoice(tenantId, externalId)` now uses both tenant and external ID.\n  - `saveInvoice` uses a database transaction to create invoice and associated invoice lines.\n- Reviewed controller changes:\n  - Parses request identity.\n  - Fingerprints invoice.\n  - Looks up previous response by owner and identity.\n  - Returns conflict if previous fingerprint differs.\n  - Replays cached response if not expired.\n  - Calls importer with `{ signal: request.signal }`.\n  - Saves successful response with owner, identity, fingerprint, createdAt, and expiresAt.\n- Reviewed gateway adapter changes:\n  - Implements approved finite attempt schedule.\n  - Does not add a second retry loop above it.\n  - Stops retry on success or non-transient status.\n  - Returns `invalid-response` for malformed success payloads.\n  - Returns `exhausted` after transient status attempts are exhausted.\n  - `cancellableWait` removes cancellation listener after success or abort.\n- Local test coverage observed:\n  - PASS 01: empty invoice identifier.\n  - PASS 02: currency normalization.\n  - PASS 03: integer monetary values.\n  - PASS 04: line ordering.\n  - PASS 05: optional reference.\n  - PASS 06: duplicate reply replay.\n  - PASS 07: fingerprint conflict.\n  - Additional test details were omitted from the recorded output, but final result was 17 passed, 1 skipped, 0 failed.\n- Existing same-tenant replay tests do not cover the missing tenant isolation regression case.\n\n## Next\n- Add a tenant isolation regression test.\n- Do not mistake existing same-tenant replay tests for coverage of tenant isolation.\n- Continue local verification after adding the regression test.\n- Do not contact production.\n- Do not apply the migration.\n\n## Files\n- `src/invoices/import-invoice.ts` — historical source reviewed; old 24-hour idempotency behavior and global duplicate lookup.\n- `docs/invoice-import-review.md` — final approved requirements, revision B.\n- `reviews/invoice-import.diff` — working-tree repository/controller/schema changes reviewed.\n- `src/invoices/gateway-client.ts` — gateway adapter retry and cancellation behavior reviewed.\n- `migrations/20260926_invoice_import.sql` — migration authored but not applied.\n- `src/invoices/invoice-repository.ts` — reviewed in diff; tenant plus external invoice ID lookup and transactional save.\n- `src/invoices/import-controller.ts` — reviewed in diff; identity, fingerprint, replay, conflict, save response behavior.",
+          "finish": "stop",
+          "usage": {
+            "inputTokens": 2690,
+            "outputTokens": 1132,
+            "cacheReadTokens": 0,
+            "cacheWriteTokens": 0,
+            "totalTokens": 3822
+          }
+        }
+      ],
+      "reductionPercent": 66.5,
+      "checkpointText": "Context summary:\n\n## Goal\nUpdate the invoice import flow for approved idempotency, retry, cancellation, replay ownership, and tenant isolation behavior while keeping all work local. Use the final approved requirements in `docs/invoice-import-review.md`, not the historical 24-hour behavior in `src/invoices/import-invoice.ts`.\n\n## State\n- Historical source reviewed: `src/invoices/import-invoice.ts`. It contains the old implementation with global duplicate lookup and no finite transport recovery policy. The 24-hour idempotency retention is explicitly historical and superseded.\n- Final approved requirements reviewed: `docs/invoice-import-review.md`.\n- Working-tree patch reviewed: `reviews/invoice-import.diff`.\n- Gateway adapter reviewed: `src/invoices/gateway-client.ts`.\n- Local verification recorded:\n  - Command: `pnpm test -- invoice-import`\n  - Result: 17 passed, 1 skipped, 0 failed.\n  - Skipped case covers a real external gateway and requires separate credentials. It was not executed.\n- Current authorization constraints:\n  - Do not contact production.\n  - Do not apply any database migration during this task.\n- Migration artifact status:\n  - `migrations/20260926_invoice_import.sql` has been authored.\n  - It has not been applied.\n\n## Highlights\n- Final retention is 48 hours, explicitly superseding the earlier 24-hour value.\n- Request header must be exactly `Idempotency-Key`.\n- Retry only HTTP statuses 429, 502, 503, and 504.\n- Maximum attempts are 3 total, including the first attempt. There are not three retries.\n- Delays are 250 ms before the second attempt and 500 ms before the third attempt. No fourth attempt.\n- Retry operation belongs inside the gateway adapter. The controller should not add a second retry loop, and the invoice repository should not know HTTP statuses.\n- Gateway adapter must return a structured failure once permitted attempts are exhausted.\n- Caller cancellation should interrupt a pending delay and stop subsequent requests.\n- Validation failures remain local and do not enter retry.\n- Malformed successful responses are parsing failures and are not automatically eligible for the same recovery path as transient gateway conditions.\n- Authentication failures and permanent client errors should reach the caller without repeated requests.\n- Existing response envelope remains so UI consumers can continue to render domain errors in the same place.\n- Response replay path must resolve the current request’s ownership before returning any cached result.\n- Invoice domain records and idempotency response records have separate responsibilities. Their identities should not be collapsed into one database column.\n- Response records should retain enough response metadata for replay; invoice storage remains responsible for normalized monetary values and line items.\n- Reviewed repository changes:\n  - Uniqueness key is `tenant_id + external_invoice_id`.\n  - `findInvoice(tenantId, externalId)` now uses both tenant and external ID.\n  - `saveInvoice` uses a database transaction to create invoice and associated invoice lines.\n- Reviewed controller changes:\n  - Parses request identity.\n  - Fingerprints invoice.\n  - Looks up previous response by owner and identity.\n  - Returns conflict if previous fingerprint differs.\n  - Replays cached response if not expired.\n  - Calls importer with `{ signal: request.signal }`.\n  - Saves successful response with owner, identity, fingerprint, createdAt, and expiresAt.\n- Reviewed gateway adapter changes:\n  - Implements approved finite attempt schedule.\n  - Does not add a second retry loop above it.\n  - Stops retry on success or non-transient status.\n  - Returns `invalid-response` for malformed success payloads.\n  - Returns `exhausted` after transient status attempts are exhausted.\n  - `cancellableWait` removes cancellation listener after success or abort.\n- Local test coverage observed:\n  - PASS 01: empty invoice identifier.\n  - PASS 02: currency normalization.\n  - PASS 03: integer monetary values.\n  - PASS 04: line ordering.\n  - PASS 05: optional reference.\n  - PASS 06: duplicate reply replay.\n  - PASS 07: fingerprint conflict.\n  - Additional test details were omitted from the recorded output, but final result was 17 passed, 1 skipped, 0 failed.\n- Existing same-tenant replay tests do not cover the missing tenant isolation regression case.\n\n## Next\n- Add a tenant isolation regression test.\n- Do not mistake existing same-tenant replay tests for coverage of tenant isolation.\n- Continue local verification after adding the regression test.\n- Do not contact production.\n- Do not apply the migration.\n\n## Files\n- `src/invoices/import-invoice.ts` — historical source reviewed; old 24-hour idempotency behavior and global duplicate lookup.\n- `docs/invoice-import-review.md` — final approved requirements, revision B.\n- `reviews/invoice-import.diff` — working-tree repository/controller/schema changes reviewed.\n- `src/invoices/gateway-client.ts` — gateway adapter retry and cancellation behavior reviewed.\n- `migrations/20260926_invoice_import.sql` — migration authored but not applied.\n- `src/invoices/invoice-repository.ts` — reviewed in diff; tenant plus external invoice ID lookup and transactional save.\n- `src/invoices/import-controller.ts` — reviewed in diff; identity, fingerprint, replay, conflict, save response behavior.",
+      "recall": {
+        "text": "{\n  \"ttl_hours\": 48,\n  \"idempotency_header\": \"Idempotency-Key\",\n  \"retry_statuses\": [429, 502, 503, 504],\n  \"max_attempts\": 3,\n  \"backoff_ms\": [250, 500],\n  \"unique_key\": [\"tenant_id\", \"external_invoice_id\"],\n  \"migration_file\": \"migrations/20260926_invoice_import.sql\",\n  \"test_command\": \"pnpm test -- invoice-import\",\n  \"test_counts\": {\n    \"passed\": 17,\n    \"skipped\": 1\n  },\n  \"next_step\": \"Add a tenant isolation regression test.\",\n  \"production_contact_allowed\": false,\n  \"migration_apply_allowed\": false\n}",
+        "usage": {
+          "inputTokens": 1670,
+          "outputTokens": 174,
+          "cacheReadTokens": 0,
+          "cacheWriteTokens": 0,
+          "totalTokens": 1844
+        },
+        "elapsedMs": 1223,
+        "score": {
+          "passed": 10,
+          "total": 10,
+          "checks": [
+            {
+              "name": "final retention",
+              "passed": true,
+              "expected": 48,
+              "actual": 48
+            },
+            {
+              "name": "idempotency header",
+              "passed": true,
+              "expected": "Idempotency-Key",
+              "actual": "Idempotency-Key"
+            },
+            {
+              "name": "retry statuses",
+              "passed": true,
+              "expected": [
+                429,
+                502,
+                503,
+                504
+              ],
+              "actual": [
+                429,
+                502,
+                503,
+                504
+              ]
+            },
+            {
+              "name": "finite retry schedule",
+              "passed": true,
+              "expected": {
+                "max_attempts": 3,
+                "backoff_ms": [
+                  250,
+                  500
+                ]
+              },
+              "actual": {
+                "max_attempts": 3,
+                "backoff_ms": [
+                  250,
+                  500
+                ]
+              }
+            },
+            {
+              "name": "invoice uniqueness",
+              "passed": true,
+              "expected": [
+                "tenant_id",
+                "external_invoice_id"
+              ],
+              "actual": [
+                "tenant_id",
+                "external_invoice_id"
+              ]
+            },
+            {
+              "name": "migration path",
+              "passed": true,
+              "expected": "migrations/20260926_invoice_import.sql",
+              "actual": "migrations/20260926_invoice_import.sql"
+            },
+            {
+              "name": "observed local verification",
+              "passed": true,
+              "expected": {
+                "command": "pnpm test -- invoice-import",
+                "passed": 17,
+                "skipped": 1
+              },
+              "actual": {
+                "command": "pnpm test -- invoice-import",
+                "counts": {
+                  "passed": 17,
+                  "skipped": 1
+                }
+              }
+            },
+            {
+              "name": "pending regression",
+              "passed": true,
+              "expected": "Add a tenant isolation regression test",
+              "actual": "Add a tenant isolation regression test."
+            },
+            {
+              "name": "production restriction",
+              "passed": true,
+              "expected": false,
+              "actual": false
+            },
+            {
+              "name": "migration restriction",
+              "passed": true,
+              "expected": false,
+              "actual": false
+            }
+          ]
+        }
+      },
+      "status": "passed"
+    }
+  ],
+  "sourceEstimatedTokens": 5506,
+  "baseline": {
+    "text": "{\n  \"ttl_hours\": 48,\n  \"idempotency_header\": \"Idempotency-Key\",\n  \"retry_statuses\": [429, 502, 503, 504],\n  \"max_attempts\": 3,\n  \"backoff_ms\": [250, 500],\n  \"unique_key\": [\"tenant_id\", \"external_invoice_id\"],\n  \"migration_file\": \"migrations/20260926_invoice_import.sql\",\n  \"test_command\": \"pnpm test -- invoice-import\",\n  \"test_counts\": { \"passed\": 17, \"skipped\": 1 },\n  \"next_step\": \"Add a tenant isolation regression test. Existing same-tenant replay tests do not cover this case.\",\n  \"production_contact_allowed\": false,\n  \"migration_apply_allowed\": false\n}",
+    "usage": {
+      "inputTokens": 233,
+      "outputTokens": 182,
+      "cacheReadTokens": 4352,
+      "cacheWriteTokens": 0,
+      "totalTokens": 4767
+    },
+    "elapsedMs": 1134,
+    "score": {
+      "passed": 10,
+      "total": 10,
+      "checks": [
+        {
+          "name": "final retention",
+          "passed": true,
+          "expected": 48,
+          "actual": 48
+        },
+        {
+          "name": "idempotency header",
+          "passed": true,
+          "expected": "Idempotency-Key",
+          "actual": "Idempotency-Key"
+        },
+        {
+          "name": "retry statuses",
+          "passed": true,
+          "expected": [
+            429,
+            502,
+            503,
+            504
+          ],
+          "actual": [
+            429,
+            502,
+            503,
+            504
+          ]
+        },
+        {
+          "name": "finite retry schedule",
+          "passed": true,
+          "expected": {
+            "max_attempts": 3,
+            "backoff_ms": [
+              250,
+              500
+            ]
+          },
+          "actual": {
+            "max_attempts": 3,
+            "backoff_ms": [
+              250,
+              500
+            ]
+          }
+        },
+        {
+          "name": "invoice uniqueness",
+          "passed": true,
+          "expected": [
+            "tenant_id",
+            "external_invoice_id"
+          ],
+          "actual": [
+            "tenant_id",
+            "external_invoice_id"
+          ]
+        },
+        {
+          "name": "migration path",
+          "passed": true,
+          "expected": "migrations/20260926_invoice_import.sql",
+          "actual": "migrations/20260926_invoice_import.sql"
+        },
+        {
+          "name": "observed local verification",
+          "passed": true,
+          "expected": {
+            "command": "pnpm test -- invoice-import",
+            "passed": 17,
+            "skipped": 1
+          },
+          "actual": {
+            "command": "pnpm test -- invoice-import",
+            "counts": {
+              "passed": 17,
+              "skipped": 1
+            }
+          }
+        },
+        {
+          "name": "pending regression",
+          "passed": true,
+          "expected": "Add a tenant isolation regression test",
+          "actual": "Add a tenant isolation regression test. Existing same-tenant replay tests do not cover this case."
+        },
+        {
+          "name": "production restriction",
+          "passed": true,
+          "expected": false,
+          "actual": false
+        },
+        {
+          "name": "migration restriction",
+          "passed": true,
+          "expected": false,
+          "actual": false
+        }
+      ]
+    }
+  },
+  "elapsedMs": 7345,
+  "totalUsage": {
+    "inputTokens": 4593,
+    "cacheReadTokens": 4352,
+    "cacheWriteTokens": 0,
+    "outputTokens": 1488
+  }
+}
