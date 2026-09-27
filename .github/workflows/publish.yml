@@ -1,0 +1,42 @@
+name: Publish npm
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Validate release tag
+        id: release
+        run: node scripts/check-release-tag.mjs
+      - run: pnpm release:check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ github.ref_name }}
+          path: .artifacts/npm/*.tgz
+          if-no-files-found: error
+      - name: Publish packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo 'Add the NPM_TOKEN repository secret before publishing.' >&2
+            exit 1
+          fi
+          pnpm --recursive publish --access public --tag "${{ steps.release.outputs.npm-tag }}" --no-git-checks --registry https://registry.npmjs.org --report-summary

@@ -2,7 +2,11 @@
 
 [English](README.md) | 简体中文
 
-本包拥有 OpenCode 的用量判断、工具输出裁剪、保留区间选择、摘要请求、结果验证和溢出续接流程。DSH 负责读取日志、调用模型和提交替换。
+本包实现 OpenCode 的用量判断、工具输出裁剪、保留区间选择、摘要请求、结果验证和溢出续接流程。DSH 负责读取日志、调用模型和提交替换。
+
+## npm 安装
+
+发布后可用 `dsh plugin --profile web add dsh-context-opencode` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
 ## 默认行为
 
@@ -24,4 +28,4 @@ OpenCode 的 provider 专用消息编码器和第三方插件钩子依赖其运�
 
 DSH 的 system 与 developer 消息保留原位；插件逐段应用 OpenCode 的保留算法，跳过只能选中既有 checkpoint 的段。用量判断仍覆盖完整上下文。摘要合并当前上下文中的全部 checkpoint；只有当前上下文没有 checkpoint 时才回退到插件状态记录，避免恢复会话时使用落后的摘要元数据。
 
-源项目为 [anomalyco/opencode](https://github.com/anomalyco/opencode)；实际参考本地 fork 的提交 `beb99270834db8eb62cf3a369e99234d4d4c2cbd`，源项目采用 MIT 许可证。预算和裁剪行为对应 `packages/opencode/src/session/`；摘要章节来自该实现调用的 `packages/core/src/session/compaction.ts`。本项目重新编写摘要指令。
+源项目为 [anomalyco/opencode](https://github.com/anomalyco/opencode)；实际参考本地 fork 的提交 `beb99270834db8eb62cf3a369e99234d4d4c2cbd`，源项目采用 MIT 许可证。预算和裁剪行为对应 `packages/opencode/src/session/`；摘要章节来自该实现调用的 `packages/core/src/session/compaction.ts`。摘要指令定义在 `src/strategy.ts` 中。

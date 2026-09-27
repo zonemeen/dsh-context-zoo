@@ -1,0 +1,26 @@
+{
+  "git": {
+    "requireBranch": "main",
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "Release v${version}",
+    "push": false,
+    "pushRepo": "origin"
+  },
+  "npm": {
+    "publish": false
+  },
+  "plugins": {
+    "@release-it/bumper": {
+      "out": "packages/*/package.json"
+    }
+  },
+  "hooks": {
+    "before:init": "node scripts/release-git-check.mjs",
+    "before:bump": "node scripts/release-git-check.mjs v${version}",
+    "after:bump": "pnpm release:check",
+    "after:release": "git push --atomic origin HEAD:refs/heads/main refs/tags/v${version}"
+  }
+}

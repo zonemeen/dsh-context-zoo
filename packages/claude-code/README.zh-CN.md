@@ -2,13 +2,17 @@
 
 [English](README.md) | 简体中文
 
-本包拥有 Claude Code 2.1.88 所观察到的上下文管理流程。默认导出 DSH Cordis 插件，`createPipeline(config)` 导出独立流程，`strategy` 导出用于比较的预算和来源信息。公共核心只提供模型调用、文件读取、日志和安全提交。
+本包实现 Claude Code 2.1.88 中观察到的上下文管理流程。默认导出 DSH Cordis 插件，`createPipeline(config)` 导出独立流程，`strategy` 导出用于比较的预算和来源信息。公共核心只提供模型调用、文件读取、日志和安全提交。
 
 ```ts
 import claudeCodeContext from 'dsh-context-claude-code';
 
 ctx.plugin(claudeCodeContext, { prune: true, idleMinutes: 60 });
 ```
+
+## npm 安装
+
+发布后可用 `dsh plugin --profile web add dsh-context-claude-code` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
 ## 流程
 

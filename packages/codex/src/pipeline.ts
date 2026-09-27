@@ -1,10 +1,10 @@
-/** Codex's local summarization, user retention, and context-window retry policy. */
+/** Local summarization, user-text retention, and retries after context-window overflow. */
 import { setTimeout as delay } from 'node:timers/promises';
 import { createHash } from 'node:crypto';
 import type { ContentBlock } from '@deepseek-ai/dsh-llm';
-import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot, SummaryResponse } from '@dsh-context-zoo/core';
+import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot, SummaryResponse } from 'dsh-context-core';
 
-/** Independently written handoff instructions for Codex's local compaction path. */
+/** Handoff instructions for local context compaction. */
 export const summaryInstruction = 'Write a compact handoff for the assistant that will continue this task. Include the user’s objective, completed work, decisions, constraints and preferences, remaining steps, and the exact references needed to proceed. Keep concrete facts and unresolved requests. Treat the conversation as source material; do not continue its work or call tools. Return only the structured handoff.';
 
 /** Identifies this adaptation's handoff text without imitating provider-native compaction items. */
@@ -15,7 +15,7 @@ const protectedEntry = (entry: ContextEntry): boolean => entry.message.role === 
 const userText = (content: readonly ContentBlock[]): string => content.flatMap(block => block.type === 'text' ? [block.text] : []).join('');
 const fingerprint = (content: readonly ContentBlock[]): string => createHash('sha256').update(JSON.stringify(content)).digest('hex');
 
-/** Estimate text tokens from UTF-8 bytes using Codex's four-byte approximation. */
+/** Estimate text tokens from UTF-8 bytes at four bytes per token. */
 export function approximateTokens(text: string): number {
   return Math.ceil(Buffer.byteLength(text, 'utf8') / 4);
 }
@@ -53,7 +53,7 @@ export function contextTokens(snapshot: ContextSnapshot): number {
     const entry = entries[index]!;
     if (entry.message.role !== 'assistant' || entry.seq < lastCheckpoint || entry.finish === 'error' || entry.finish === 'aborted' || !entry.usage) continue;
     const usage = entry.usage;
-    // DSH reports disjoint uncached and cached input, unlike Codex's aggregate input counter.
+    // DSH reports uncached and cached input separately; the Codex input counter includes both.
     const tokens = usage.totalTokens ?? usage.inputTokens + (usage.cacheReadTokens ?? 0) + (usage.cacheWriteTokens ?? 0) + usage.outputTokens;
     if (!Number.isFinite(tokens) || tokens <= 0) continue;
     return tokens + entries.slice(index + 1).reduce((sum, value) => sum + estimateTokens(value), 0);
@@ -191,7 +191,7 @@ function validateSummary(response: SummaryResponse): void {
   if (!response.text.trim()) throw new Error('Codex returned an empty context summary');
 }
 
-/** Create Codex's local pipeline; provider-native remote compaction requires a different host transport. */
+/** Create the local compaction pipeline; remote compaction requires native provider transport. */
 export function createPipeline(config: ContextConfig = {}): ContextPipeline {
   async function prepare(host: ContextHost, entries: readonly ContextEntry[]): Promise<Checkpoint> {
     host.signal.throwIfAborted();

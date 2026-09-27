@@ -2,7 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-This package independently implements ZCode's usage accounting, microcompaction, conversation-turn selection, summary retries, and recovery reminders. Its default export is a DSH Cordis plugin; `createPipeline(config)` can accept a `ContextHost` directly. See the [root README](../../README.md) for integration.
+This package adapts the ZCode workflow for usage accounting, microcompaction, conversation-turn selection, summary retries, and recovery reminders. Its default export is a DSH Cordis plugin; `createPipeline(config)` can accept a `ContextHost` directly. See the [root README](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.md) for integration.
+
+## npm installation
+
+After release, install with `dsh plugin --profile web add dsh-context-zcode`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
 ## Default workflow
 
@@ -23,7 +27,7 @@ This package independently implements ZCode's usage accounting, microcompaction,
 
 ## Sources and DSH mapping
 
-Based on the [pinned zai-org/ZCode revision](https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e), commit `29628c9acdb81b703bbd4080c207a0e7ce5e276e`, under Apache-2.0. The workflow maps to `apps/zcode-cli/packages/core/src/compact/{policy,microcompact}.ts`, `runtime/helpers/compact-selection.ts`, `runtime/methods/{compact-active,turn-loop-state,turn-model-step}.ts`, and `runtime/helpers/compact-post-reminders.ts`. The summary instructions were rewritten for this project.
+Based on the [pinned zai-org/ZCode revision](https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e), commit `29628c9acdb81b703bbd4080c207a0e7ce5e276e`, under Apache-2.0. The workflow maps to `apps/zcode-cli/packages/core/src/compact/{policy,microcompact}.ts`, `runtime/helpers/compact-selection.ts`, `runtime/methods/{compact-active,turn-loop-state,turn-model-step}.ts`, and `runtime/helpers/compact-post-reminders.ts`. Summary instructions are defined in `src/pipeline.ts`.
 
 DSH handles model transport, attachment encoding, cancellation, and session transactions. System/developer messages stay in place. The plugin applies ZCode's selection logic separately to the segments between these messages and skips segments that cannot form a summarizable range. Usage accounting covers the full context. Recovery counters, pruning savings, and Read-restoration baselines are logged and survive plugin reconstruction.
 

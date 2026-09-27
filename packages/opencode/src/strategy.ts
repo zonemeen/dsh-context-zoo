@@ -1,5 +1,5 @@
 /** OpenCode context-budget, recent-history, and optional output-pruning strategy. */
-import type { ContextStrategy } from '@dsh-context-zoo/core';
+import type { ContextStrategy } from 'dsh-context-core';
 
 /** Adaptation of the pinned OpenCode session compaction implementation. */
 export const strategy: ContextStrategy = {

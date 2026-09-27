@@ -2,7 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-This package owns OpenCode's usage accounting, tool-output pruning, retained-history selection, summary requests, result validation, and overflow recovery. DSH reads the log, calls the model, and commits replacements.
+This package adapts the OpenCode workflow for usage accounting, tool-output pruning, retained-history selection, summary requests, result validation, and overflow recovery. DSH reads the log, calls the model, and commits replacements.
+
+## npm installation
+
+After release, install with `dsh plugin --profile web add dsh-context-opencode`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
 ## Default behavior
 
@@ -24,4 +28,4 @@ OpenCode's provider-specific message encoders and third-party plugin hooks requi
 
 DSH's system and developer messages stay in place. The plugin applies OpenCode's retention algorithm to each history segment, skipping segments where only existing checkpoints would be selected. Usage accounting still covers the full context. Summaries merge every checkpoint in the current context and fall back to plugin state records only when the context has no checkpoints, avoiding stale summary metadata when restoring a session.
 
-Original project: [anomalyco/opencode](https://github.com/anomalyco/opencode). The inspected local fork is pinned to `beb99270834db8eb62cf3a369e99234d4d4c2cbd`. The source project uses the MIT license. Budget and pruning behavior come from `packages/opencode/src/session/`; summary headings come from `packages/core/src/session/compaction.ts`, which that implementation calls. This project uses rewritten summary instructions.
+Original project: [anomalyco/opencode](https://github.com/anomalyco/opencode). The inspected local fork is pinned to `beb99270834db8eb62cf3a369e99234d4d4c2cbd`. The source project uses the MIT license. Budget and pruning behavior come from `packages/opencode/src/session/`; summary headings come from `packages/core/src/session/compaction.ts`, which that implementation calls. Summary instructions are defined in `src/strategy.ts`.

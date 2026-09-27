@@ -1,9 +1,9 @@
-/** Kimi Code's full-history compaction and original user input restoration. */
-import { createContextPlugin, type ContextStrategy } from '@dsh-context-zoo/core';
+/** Full-history compaction and original user-input restoration based on the Kimi Code workflow. */
+import { createContextPlugin, type ContextStrategy } from 'dsh-context-core';
 import { createPipeline, SUMMARY_INSTRUCTIONS } from './pipeline.js';
 export { createPipeline } from './pipeline.js';
 
-/** Strategy adapted from Kimi Code's pinned fullCompaction implementation. */
+/** Strategy adapted from the fullCompaction implementation in the pinned Kimi Code revision. */
 export const strategy: ContextStrategy = {
   id: 'kimi-code',
   name: 'Kimi Code',

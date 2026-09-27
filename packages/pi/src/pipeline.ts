@@ -1,6 +1,6 @@
 /** Pi compaction, split-turn summarization, branch summaries, and file-operation lineage. */
 import { setTimeout as delay } from 'node:timers/promises';
-import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot, SummaryResponse } from '@dsh-context-zoo/core';
+import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot, SummaryResponse } from 'dsh-context-core';
 import { strategy } from './strategy.js';
 
 const checkpoint = (entry: ContextEntry): boolean => entry.message.source.kind === 'compact-checkpoint';
@@ -152,7 +152,7 @@ function transient(error: unknown): boolean {
   return /overloaded|rate.?limit|429|50[0234]|524|service.?unavailable|server.?error|network|connection|fetch failed|ENOTFOUND|EAI_AGAIN|socket|timed? out|timeout|terminated|ended without|websocket|please retry/i.test(message);
 }
 
-/** Create Pi's full workflow, including separate history and turn-prefix model calls. */
+/** Create the Pi compaction pipeline, including separate history and turn-prefix model calls. */
 export function createPipeline(config: ContextConfig = {}): ContextPipeline {
   async function call(host: ContextHost, entries: readonly ContextEntry[], prompt: string, cap: number, previous = '', includeCheckpoints = false): Promise<string> {
     const instruction = [

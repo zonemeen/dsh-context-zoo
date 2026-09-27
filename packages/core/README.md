@@ -1,15 +1,19 @@
-# @dsh-context-zoo/core
+# dsh-context-core
 
 English | [简体中文](README.zh-CN.md)
 
 The DSH integration layer for independent context plugins. Core provides session observations, model calls, file reads subject to host permissions, and commit transactions. Each plugin chooses its thresholds, history ranges, prompts, retries, and recovery content.
 
-DSH peer dependencies are pinned to `0.1.7-rc.2`; Cordis is `~4.0.4`. Apply the [Session patch](../../patches/README.md) to the actual host dependencies before use.
+DSH peer dependencies are pinned to `0.1.7-rc.2`; Cordis is `~4.0.4`. Apply the [Session patch](https://github.com/zonemeen/dsh-context-zoo/blob/main/patches/README.md) to the actual host dependencies before use.
+
+## Published tools
+
+The package includes the `dsh-context-patch` CLI for generating a profile overlay and exports `./compat/*` with the required Session patches, instructions, and license. The files are stored in `dist/compat/`. See the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages) for commands. Applying a host patch remains an explicit operation.
 
 ## Interface
 
 ```ts
-import { createContextPlugin } from '@dsh-context-zoo/core';
+import { createContextPlugin } from 'dsh-context-core';
 import { createPipeline } from './pipeline.js';
 
 export default createContextPlugin({ id: 'my-agent', create: createPipeline });
@@ -66,7 +70,7 @@ External runtimes can return observed `approvedPlanPath`, `transcriptPath`, `wir
 Pi branch navigation calls:
 
 ```ts
-import { summarizeBranch } from '@dsh-context-zoo/core';
+import { summarizeBranch } from 'dsh-context-core';
 
 const summary = await summarizeBranch(ctx, idleAgent, abandonedBranchSeqs, signal);
 ```

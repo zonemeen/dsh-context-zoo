@@ -1,5 +1,5 @@
 /** Pi context-budget, recent-history, and structured-summary strategy. */
-import type { ContextStrategy } from '@dsh-context-zoo/core';
+import type { ContextStrategy } from 'dsh-context-core';
 
 /** Adaptation of the pinned Pi coding-agent compaction implementation. */
 export const strategy: ContextStrategy = {

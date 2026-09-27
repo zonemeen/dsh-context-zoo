@@ -69,7 +69,7 @@ export function createContextPlugin(definition: PipelineDefinition): ContextPlug
       validateConfig(config);
       const probe = Session.create(SessionId('context-zoo-capability-probe'));
       const marker = probe.append('context-zoo/state', { plugin: definition.id, kind: 'probe', data: {} }, { ignorable: true });
-      if (marker.ignorable !== true) throw new Error('DSH Session.append needs the supplied ignorable-event patch; see dsh-context-zoo patches/README.md');
+      if (marker.ignorable !== true) throw new Error('DSH Session.append needs the supplied ignorable-event patch; see dsh-context-core/dist/compat/README.md');
       const settings = Object.freeze({ ...config });
       const pipelines = new WeakMap<Session, ContextPipeline>();
       const pipelineFor = (session: Session): ContextPipeline => {

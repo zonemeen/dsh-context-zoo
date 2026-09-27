@@ -1,5 +1,6 @@
+#!/usr/bin/env node
 /** Generate a loader overlay from a resolved DSH profile without editing that profile. */
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { parse, stringify } from 'yaml';
 
@@ -174,10 +175,10 @@ export function createProfilePatch(entries, agentId) {
   return patches;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   try {
     const [agentId, filename, ...extra] = process.argv.slice(2);
-    if (!agentId || !filename || extra.length > 0) throw new Error('Usage: node scripts/create-profile-patch.mjs <agent-id> <resolved-profile.yml>');
+    if (!agentId || !filename || extra.length > 0) throw new Error('Usage: dsh-context-patch <agent-id> <resolved-profile.yml>');
     process.stdout.write(stringifyProfilePatch(createProfilePatch(parseProfileDump(readFileSync(filename, 'utf8')), agentId)));
   } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);

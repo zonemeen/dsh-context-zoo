@@ -2,7 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-This package independently implements Kimi Code's full-history summarization, input shrinking after overflow, original user-input restoration, and session continuation. Its default export is a DSH Cordis plugin; `createPipeline(config)` can accept a `ContextHost` directly. See the [root README](../../README.md) for integration.
+This package adapts the Kimi Code workflow for full-history summarization, input shrinking after overflow, original user-input restoration, and session continuation. Its default export is a DSH Cordis plugin; `createPipeline(config)` can accept a `ContextHost` directly. See the [root README](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.md) for integration.
+
+## npm installation
+
+After release, install with `dsh plugin --profile web add dsh-context-kimi-code`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
 ## Default workflow
 
@@ -22,7 +26,7 @@ This package independently implements Kimi Code's full-history summarization, in
 
 ## Sources and DSH mapping
 
-Based on the [pinned MoonshotAI/kimi-code revision](https://github.com/MoonshotAI/kimi-code/tree/be7d5f5fea7800778e4660cd5f36780ba783bddd), commit `be7d5f5fea7800778e4660cd5f36780ba783bddd`, under MIT. The active workflow maps to `packages/agent-core-v2/src/agent/fullCompaction/fullCompactionService.ts`, `agent/contextMemory/compactionHandoff.ts`, `llm-adapter/contract/tokens.ts`, and `_base/utils/retry.ts`. The summary instructions were rewritten for this project.
+Based on the [pinned MoonshotAI/kimi-code revision](https://github.com/MoonshotAI/kimi-code/tree/be7d5f5fea7800778e4660cd5f36780ba783bddd), commit `be7d5f5fea7800778e4660cd5f36780ba783bddd`, under MIT. The active workflow maps to `packages/agent-core-v2/src/agent/fullCompaction/fullCompactionService.ts`, `agent/contextMemory/compactionHandoff.ts`, `llm-adapter/contract/tokens.ts`, and `_base/utils/retry.ts`. Summary instructions are defined in `src/pipeline.ts`.
 
 The upstream service uses `tokenCounting.get(agentContext).size` to decide when to compact. This plugin uses DSH's `measuredTokens`, including the host's usage calibration. Auxiliary summary shrinking and user-input restoration use this package's estimate: ASCII character count divided by 4, plus one token per other Unicode code point, with 2,000 tokens per image. Tool names, arguments, and roles contribute to the estimate.
 

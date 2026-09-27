@@ -2,7 +2,11 @@
 
 [English](README.md) | 简体中文
 
-本包独立实现 ZCode 的用量判断、microcompaction、对话轮次选择、摘要重试和恢复提醒。默认导出 DSH Cordis 插件；`createPipeline(config)` 可直接接受 `ContextHost`，接入见[根目录说明](../../README.zh-CN.md)。
+本包实现 ZCode 的用量判断、microcompaction、对话轮次选择、摘要重试和恢复提醒。默认导出 DSH Cordis 插件；`createPipeline(config)` 可直接接受 `ContextHost`，接入见[根目录说明](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.zh-CN.md)。
+
+## npm 安装
+
+发布后可用 `dsh plugin --profile web add dsh-context-zcode` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
 ## 默认流程
 
@@ -23,7 +27,7 @@
 
 ## 来源和 DSH 映射
 
-参考 [zai-org/ZCode 固定版本](https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e)，提交 `29628c9acdb81b703bbd4080c207a0e7ce5e276e`，Apache-2.0。流程对应 `apps/zcode-cli/packages/core/src/compact/{policy,microcompact}.ts`、`runtime/helpers/compact-selection.ts`、`runtime/methods/{compact-active,turn-loop-state,turn-model-step}.ts` 和 `runtime/helpers/compact-post-reminders.ts`。摘要指令在本项目重新编写。
+参考 [zai-org/ZCode 固定版本](https://github.com/zai-org/ZCode/tree/29628c9acdb81b703bbd4080c207a0e7ce5e276e)，提交 `29628c9acdb81b703bbd4080c207a0e7ce5e276e`，Apache-2.0。流程对应 `apps/zcode-cli/packages/core/src/compact/{policy,microcompact}.ts`、`runtime/helpers/compact-selection.ts`、`runtime/methods/{compact-active,turn-loop-state,turn-model-step}.ts` 和 `runtime/helpers/compact-post-reminders.ts`。摘要指令定义在 `src/pipeline.ts` 中。
 
 DSH 负责模型传输、附件编码、取消和会话事务。system/developer 消息保留原位；插件在这些消息之间逐段执行 ZCode 选择逻辑，并跳过无法形成可汇总区间的段。用量判断覆盖完整上下文。恢复计数、裁剪量和 Read 恢复基准写入日志，重建插件不会丢失。
 

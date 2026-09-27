@@ -2,11 +2,15 @@
 
 English | [简体中文](README.zh-CN.md)
 
-This package adapts Codex's local summary workflow to DeepSeek Harness. It owns token accounting, pressure checks, summary requests, history reduction, retries, and recent user-text retention. The default export is a DSH Cordis plugin; `createPipeline(config)` provides a standalone pipeline, and `strategy` exposes budgets and source metadata.
+This package adapts the local summary workflow from Codex to DeepSeek Harness. It handles token accounting, pressure checks, summary requests, history reduction, retries, and recent user-text retention. The default export is a DSH Cordis plugin; `createPipeline(config)` provides a standalone pipeline, and `strategy` exposes budgets and source metadata.
 
-## Install
+## npm installation
 
-Use DSH `0.1.7-rc.2` with the [Session writer patch](../../patches/README.md) applied to the actual host. Follow the root [installation and activation instructions](../../README.md#use-with-dsh), using `./packages/codex` as the package path and `codex` as the overlay generator's agent id.
+After release, install with `dsh plugin --profile web add dsh-context-codex`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
+
+## Source checkout installation
+
+Use DSH `0.1.7-rc.2` with the [Session writer patch](https://github.com/zonemeen/dsh-context-zoo/blob/main/patches/README.md) applied to the actual host. Follow the root [installation and activation instructions](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.md#use-with-dsh), using `./packages/codex` as the package path and `codex` as the overlay generator's agent id.
 
 The package declares `dsh.bundle.patch: []` in `package.json`, so DSH recognizes it as a bundle without default configuration layers. Activate Codex with the generated overlay after installation. The generator places the plugin in the profile's active compaction scopes and disables their native tool-result pruner. Use one context strategy per profile and rebuild this checkout after source changes. Persistent activation and strategy switching are covered in the root instructions.
 
@@ -20,7 +24,7 @@ ctx.plugin(codexContext);
 
 1. Estimate each message from its model-visible UTF-8 bytes at roughly four bytes per token. Plaintext reasoning does not add to the estimate. Images use a fixed estimate rather than their data URL length. Use the latest valid assistant usage after the live checkpoints as an anchor and add estimates for messages appended afterward; cache usage is counted once.
 2. Trigger automatic compaction at 90% of the context window by default. The output-token limit is not subtracted from this threshold. Manual compaction bypasses the pressure check. Overflow or HTTP 413 from an ordinary model request is left to the host.
-3. Select one completed contiguous span, preserving system/developer messages and unfinished tool calls. Prepare a local summary request with that span plus the live system/developer messages. The summary instruction is authored independently for this plugin. Model calls and results are recorded in the DSH session.
+3. Select one completed contiguous span, preserving system/developer messages and unfinished tool calls. Prepare a local summary request with that span plus the live system/developer messages. The summary instruction is defined in `src/pipeline.ts`. Model calls and results are recorded in the DSH session.
 4. If the summary request exceeds the context window, remove the oldest input item together with its tool-call or tool-result counterpart, then retry with the reduced input. Each reduction resets the ordinary error retry budget. Ordinary model-call errors allow five retries by default, with exponential backoff and jitter; cancellation stops the operation.
 5. Retain the newest real user text within a default 20000-token budget, excluding contextual injections. When the oldest retained text exceeds the remaining budget, preserve its head and tail at valid UTF-8 boundaries and insert a truncation marker. The marker itself is additional to the text budget. Retained user content is text-only; images are not reattached. Recognized instructions, catalogs, snapshots, skills, plans, and agent context are preserved separately from the user-text budget. Newer snapshots, catalogs, and plans supersede earlier entries with the same source kind and form; distinct instruction and skill sources remain separate.
 6. Commit the retained user text and summary together as a DSH checkpoint. A failed, cancelled, empty, truncated, or expanded summary leaves the selected history intact. Summary output containing tool calls or media is rejected. DSH also rejects a commit if the selected input changed during summarization. Retained user text remains available after session reload for both ordinary and explicit range compaction.
@@ -55,7 +59,7 @@ This pipeline performs no tool-result pruning. `prune`, `summaryToolChars`, `max
 
 ## Host adaptation and limits
 
-DSH preserves its system/developer messages and unfinished tool calls. Retained user text is stored in checkpoint blocks, while native Codex rebuilds separate user-role items. Codex's initial-context reinjection depends on its world state and turn context; this plugin uses the messages recorded by DSH and cannot manufacture that native state.
+DSH preserves its system/developer messages and unfinished tool calls. Retained user text is stored in checkpoint blocks, while native Codex rebuilds separate user-role items. Initial-context reinjection in native Codex depends on its world state and turn context; this plugin uses the messages recorded by DSH and cannot manufacture that native state.
 
 The following native Codex modes are unsupported by this plugin:
 
@@ -68,4 +72,4 @@ Encrypted reasoning and opaque native response items are not represented by the 
 
 ## Source
 
-Original project: [openai/codex](https://github.com/openai/codex), inspected at [`e72da2b53805894878023d01949a25a082e0a5cb`](https://github.com/openai/codex/tree/e72da2b53805894878023d01949a25a082e0a5cb), licensed under [Apache-2.0](https://github.com/openai/codex/blob/e72da2b53805894878023d01949a25a082e0a5cb/LICENSE). The reference includes `codex-rs/core/src/compact.rs`, `codex-rs/core/src/context_manager/history.rs`, and `codex-rs/utils/output-truncation/src/lib.rs`. The TypeScript implementation and summary prompts were written for this repository.
+Original project: [openai/codex](https://github.com/openai/codex), inspected at [`e72da2b53805894878023d01949a25a082e0a5cb`](https://github.com/openai/codex/tree/e72da2b53805894878023d01949a25a082e0a5cb), licensed under [Apache-2.0](https://github.com/openai/codex/blob/e72da2b53805894878023d01949a25a082e0a5cb/LICENSE). The reference includes `codex-rs/core/src/compact.rs`, `codex-rs/core/src/context_manager/history.rs`, and `codex-rs/utils/output-truncation/src/lib.rs`.

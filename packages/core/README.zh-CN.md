@@ -1,15 +1,19 @@
-# @dsh-context-zoo/core
+# dsh-context-core
 
 [English](README.md) | 简体中文
 
 独立上下文插件的 DSH 接入层。core 提供会话观察、模型调用、受宿主权限约束的文件读取和提交事务，不选择压缩阈值、历史范围、提示词、重试次数或恢复内容。
 
-DSH peer dependencies 固定为 `0.1.7-rc.2`，Cordis 为 `~4.0.4`。使用前须按仓库的 [Session 补丁说明](../../patches/README.zh-CN.md) 处理实际宿主依赖。
+DSH peer dependencies 固定为 `0.1.7-rc.2`，Cordis 为 `~4.0.4`。使用前须按仓库的 [Session 补丁说明](https://github.com/zonemeen/dsh-context-zoo/blob/main/patches/README.zh-CN.md) 处理实际宿主依赖。
+
+## 随包发布的工具
+
+本包包含用于生成 profile 覆盖补丁的 `dsh-context-patch` CLI，并通过 `./compat/*` 导出所需的 Session 补丁、说明和许可证；文件位于 `dist/compat/`。命令见 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包)。宿主补丁仍需显式应用。
 
 ## 接口
 
 ```ts
-import { createContextPlugin } from '@dsh-context-zoo/core';
+import { createContextPlugin } from 'dsh-context-core';
 import { createPipeline } from './pipeline.js';
 
 export default createContextPlugin({ id: 'my-agent', create: createPipeline });
@@ -66,7 +70,7 @@ core 校验工具调用配对、连续范围、并发压缩锁和摘要后的历
 Pi 分支导航调用：
 
 ```ts
-import { summarizeBranch } from '@dsh-context-zoo/core';
+import { summarizeBranch } from 'dsh-context-core';
 
 const summary = await summarizeBranch(ctx, idleAgent, abandonedBranchSeqs, signal);
 ```

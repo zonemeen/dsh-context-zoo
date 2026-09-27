@@ -1,9 +1,9 @@
 /** Context policy adapted from the pinned zonemeen Qwen Code fork. */
-import { createContextPlugin, type ContextStrategy } from '@dsh-context-zoo/core';
+import { createContextPlugin, type ContextStrategy } from 'dsh-context-core';
 import { createPipeline, summaryInstruction } from './pipeline.js';
 export { createPipeline } from './pipeline.js';
 
-/** Comparison metadata for the zonemeen fork's independently owned context workflow. */
+/** Comparison metadata for the context workflow in the pinned zonemeen Qwen Code fork. */
 export const strategy: ContextStrategy = {
   id: 'qwen-code',
   name: 'Qwen Code (zonemeen fork)',

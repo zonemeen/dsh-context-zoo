@@ -37,7 +37,7 @@ function checkSessionWriter(session: Session, plugin: string): void {
   if (checkedSessionClasses.has(implementation)) return;
   const probe = implementation.create(SessionId('context-zoo-runtime-probe'));
   const marker = probe.append('context-zoo/state', { plugin, kind: 'probe', data: {} }, { ignorable: true });
-  if (marker.ignorable !== true) throw new Error('The active DSH Session implementation needs the supplied ignorable-event patch; see dsh-context-zoo patches/README.md');
+  if (marker.ignorable !== true) throw new Error('The active DSH Session implementation needs the supplied ignorable-event patch; see dsh-context-core/dist/compat/README.md');
   checkedSessionClasses.add(implementation);
 }
 
@@ -57,7 +57,7 @@ export function createHost(ctx: Context, agent: CompactionAgentContext, id: stri
     // Durable metadata must contain JSON values, including no undefined properties.
     const durable: Record<string, unknown> = JSON.parse(JSON.stringify(data));
     const event = session.append('context-zoo/state', { plugin: id, kind, data: durable }, { ignorable: true });
-    if (event.ignorable !== true) throw new Error('DSH Session.append needs the supplied ignorable-event patch; see patches/README.md');
+    if (event.ignorable !== true) throw new Error('DSH Session.append needs the supplied ignorable-event patch; see dsh-context-core/dist/compat/README.md');
   };
   const host: ContextHost = {
     signal,

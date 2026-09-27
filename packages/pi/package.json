@@ -32,10 +32,11 @@
     "node": "^22.19.0 || >=24.0.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@dsh-context-zoo/core": "workspace:^"
+    "dsh-context-core": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/dsh-agent": "0.1.7-rc.2",
@@ -51,5 +52,9 @@
     "bundle": {
       "patch": []
     }
+  },
+  "homepage": "https://github.com/zonemeen/dsh-context-zoo/tree/main/packages/pi#readme",
+  "bugs": {
+    "url": "https://github.com/zonemeen/dsh-context-zoo/issues"
   }
 }

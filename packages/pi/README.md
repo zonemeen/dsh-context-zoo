@@ -2,7 +2,11 @@
 
 English | [简体中文](README.zh-CN.md)
 
-This package owns Pi's usage estimation, cut-point selection, history and turn-prefix summaries, file-operation records, branch summaries, and recovery. DSH provides session observations, model calls, and commit operations.
+This package adapts the Pi workflow for usage estimation, cut-point selection, history and turn-prefix summaries, file-operation records, branch summaries, and recovery. DSH provides session observations, model calls, and commit operations.
+
+## npm installation
+
+After release, install with `dsh plugin --profile web add dsh-context-pi`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
 ## Default behavior
 
@@ -28,4 +32,4 @@ DSH handles persistence and request routing; this package maintains all selectio
 
 DSH's system and developer messages stay in place. The plugin runs Pi's cut-point algorithm within each contiguous history segment, skipping segments with no compactable prefix. Usage accounting covers the full context. Summaries and file-operation records inherit every checkpoint in the current context and fall back to plugin state records only when the context has no checkpoints. Usage recorded before any current checkpoint is treated as stale.
 
-Original project: [earendil-works/pi](https://github.com/earendil-works/pi). The inspected local fork is pinned to `8a7b0c03dfb702663acafb6dc29f8acaa4ffe391`. The source project uses the MIT license. The reference entry point is `packages/coding-agent/src/core/compaction/compaction.ts`. This project uses rewritten summary instructions.
+Original project: [earendil-works/pi](https://github.com/earendil-works/pi). The inspected local fork is pinned to `8a7b0c03dfb702663acafb6dc29f8acaa4ffe391`. The source project uses the MIT license. The reference entry point is `packages/coding-agent/src/core/compaction/compaction.ts`. Summary instructions are defined in `src/strategy.ts`.

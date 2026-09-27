@@ -1,9 +1,9 @@
 /** ZCode-inspired context budgets, round retention, and tool-result pruning. */
-import { createContextPlugin, type ContextStrategy } from '@dsh-context-zoo/core';
+import { createContextPlugin, type ContextStrategy } from 'dsh-context-core';
 import { createPipeline, SUMMARY_INSTRUCTIONS } from './pipeline.js';
 export { createPipeline } from './pipeline.js';
 
-/** Strategy adapted from ZCode's pinned CLI compaction implementation. */
+/** Strategy adapted from the CLI compaction implementation in the pinned ZCode revision. */
 export const strategy: ContextStrategy = {
   id: 'zcode',
   name: 'ZCode',

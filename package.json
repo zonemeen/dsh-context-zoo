@@ -6,17 +6,21 @@
   "description": "Context management strategies from coding agents, adapted as DSH plugins.",
   "packageManager": "pnpm@11.9.0",
   "engines": {
-    "node": "^22.19.0 || >=24.0.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "build": "pnpm clean && tsc -b",
+    "build": "pnpm clean && tsc -b && node scripts/copy-package-assets.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "pnpm build && node --test tests/*.test.mjs",
     "check": "pnpm test && node scripts/check-packages.mjs",
     "compare": "pnpm build && node examples/compare-budgets.mjs",
     "clean": "node scripts/clean.mjs",
     "test:profiles": "node --test scripts/check-dsh-profiles.mjs",
-    "test:deepseek": "node scripts/check-deepseek.mjs"
+    "test:deepseek": "node scripts/check-deepseek.mjs",
+    "release:check": "pnpm check && node scripts/check-release.mjs",
+    "release": "release-it --only-version",
+    "release:local": "release-it --only-version --config .release-it.local.json",
+    "release:publish": "pnpm release:check && node scripts/publish-local.mjs"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.0.4",
@@ -36,6 +40,7 @@
     "@deepseek-ai/dsh-session-persistence": "0.1.7-rc.2",
     "@deepseek-ai/dsh-session-projection": "0.1.7-rc.2",
     "@deepseek-ai/dsh-token-meter": "0.1.7-rc.2",
+    "@release-it/bumper": "^8.0.1",
     "@types/node": "^22.20.0",
     "dsh-context-claude-code": "workspace:*",
     "dsh-context-codex": "workspace:*",
@@ -44,6 +49,9 @@
     "dsh-context-pi": "workspace:*",
     "dsh-context-qwen-code": "workspace:*",
     "dsh-context-zcode": "workspace:*",
+    "release-it": "^21.1.0",
+    "semver": "^7.8.5",
+    "tar": "^7.5.22",
     "typescript": "^6.0.3",
     "yaml": "^2.8.1"
   }

@@ -1,5 +1,5 @@
-/** Codex's independently owned local context compaction for DeepSeek Harness. */
-import { createContextPlugin, type ContextStrategy } from '@dsh-context-zoo/core';
+/** Local context compaction plugin for DeepSeek Harness. */
+import { createContextPlugin, type ContextStrategy } from 'dsh-context-core';
 import { createPipeline, summaryInstruction } from './pipeline.js';
 export { createPipeline } from './pipeline.js';
 

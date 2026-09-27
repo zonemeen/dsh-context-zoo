@@ -10,6 +10,10 @@ import claudeCodeContext from 'dsh-context-claude-code';
 ctx.plugin(claudeCodeContext, { prune: true, idleMinutes: 60 });
 ```
 
+## npm installation
+
+After release, install with `dsh plugin --profile web add dsh-context-claude-code`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
+
 ## Workflow
 
 1. Use the latest assistant input, cache-read, cache-write, and output usage as a measurement anchor, then estimate messages added afterward. Without usage data, use this package's character and image estimates. Subtract recorded microcompaction savings from the corresponding anchor.

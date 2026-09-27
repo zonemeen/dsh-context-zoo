@@ -1,5 +1,5 @@
 {
-  "name": "@dsh-context-zoo/core",
+  "name": "dsh-context-core",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -16,7 +16,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./compat/*": "./dist/compat/*"
   },
   "files": [
     "dist/**/*.js",
@@ -26,15 +27,20 @@
     "README.md",
     "README.zh-CN.md",
     "src",
-    "LICENSE"
+    "LICENSE",
+    "dist/tools",
+    "dist/compat"
   ],
   "engines": {
     "node": "^22.19.0 || >=24.0.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
-  "dependencies": {},
+  "dependencies": {
+    "yaml": "^2.8.1"
+  },
   "peerDependencies": {
     "@deepseek-ai/dsh-agent": "0.1.7-rc.2",
     "@deepseek-ai/dsh-commands": "0.1.7-rc.2",
@@ -44,5 +50,12 @@
     "@deepseek-ai/dsh-token-meter": "0.1.7-rc.2",
     "@deepseek-ai/cordis": "~4.0.4",
     "@deepseek-ai/dsh-fs": "0.1.7-rc.2"
+  },
+  "homepage": "https://github.com/zonemeen/dsh-context-zoo/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/zonemeen/dsh-context-zoo/issues"
+  },
+  "bin": {
+    "dsh-context-patch": "./dist/tools/create-profile-patch.mjs"
   }
 }

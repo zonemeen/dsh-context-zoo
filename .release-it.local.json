@@ -1,0 +1,7 @@
+{
+  "extends": "./.release-it.json",
+  "hooks": {
+    "after:release": "",
+    "after:afterRelease": "node scripts/publish-local.mjs"
+  }
+}

@@ -4,9 +4,13 @@
 
 本包将 Codex 的本地摘要流程适配为 DeepSeek Harness 插件，独立负责 token 计量、压力检查、摘要请求、历史缩减、重试和最近用户文本保留。默认导出 DSH Cordis 插件；`createPipeline(config)` 提供独立流程，`strategy` 导出预算和来源信息。
 
-## 安装
+## npm 安装
 
-使用 DSH `0.1.7-rc.2`，并将 [Session 写入补丁](../../patches/README.zh-CN.md) 应用到实际宿主。按照根目录的 [安装与启用说明](../../README.zh-CN.md#接入-dsh) 操作，包路径使用 `./packages/codex`，覆盖补丁生成器的 agent id 使用 `codex`。
+发布后可用 `dsh plugin --profile web add dsh-context-codex` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
+
+## 源码安装
+
+使用 DSH `0.1.7-rc.2`，并将 [Session 写入补丁](https://github.com/zonemeen/dsh-context-zoo/blob/main/patches/README.zh-CN.md) 应用到实际宿主。按照根目录的 [安装与启用说明](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.zh-CN.md#接入-dsh) 操作，包路径使用 `./packages/codex`，覆盖补丁生成器的 agent id 使用 `codex`。
 
 本包在 `package.json` 中声明 `dsh.bundle.patch: []`，因此 DSH 将其识别为 bundle，但不会加载默认配置层。安装后通过生成的覆盖补丁启用 Codex。生成器会将插件放到 profile 已启用的压缩作用域中，并禁用相应的原生工具结果清理器。每个 profile 使用一种上下文策略，修改源码后重新构建本仓库。持久启用和策略切换步骤见根目录说明。
 
@@ -20,7 +24,7 @@ ctx.plugin(codexContext);
 
 1. 按模型可见内容的 UTF-8 字节数逐条估算消息，约每四字节一个 token。明文 reasoning 不增加估算值，图片使用固定估算值，不按 data URL 长度计量。使用当前检查点之后最近一次有效 assistant usage 作为锚点，加上其后新增消息的估算值；缓存用量只计算一次。
 2. 默认在上下文窗口的 90% 触发自动压缩，不从阈值中扣除输出 token 上限。手动压缩绕过压力检查；普通模型请求的上下文溢出和 HTTP 413 由宿主处理。
-3. 选择一段已完成的连续历史，保留 system/developer 消息和未完成的工具调用；将选定历史连同当前的 system/developer 消息发送给本地摘要流程，使用本插件独立编写的摘要指令。模型调用和结果记录到 DSH 会话。
+3. 选择一段已完成的连续历史，保留 system/developer 消息和未完成的工具调用；将选定历史连同当前的 system/developer 消息发送给本地摘要流程，使用 `src/pipeline.ts` 中定义的摘要指令。模型调用和结果记录到 DSH 会话。
 4. 摘要请求超出上下文窗口时，移除最旧输入条目及其配对的工具调用或工具结果，再以缩减后的输入重试。每次缩减都会重置普通错误的重试计数。普通模型调用错误默认最多重试五次，采用带随机抖动的指数退避；取消操作会停止流程。
 5. 默认在 20000-token 预算内保留最近的真实用户文本，排除上下文注入。最旧一条待保留文本超过剩余预算时，在有效 UTF-8 边界保留首尾并插入截断标记；标记本身的长度不计入文本预算。只保留用户文本，不重新附加图片。已识别的指令、目录、快照、技能、计划和 agent 上下文单独保留，不占用户文本预算。source kind 和 form 相同的快照、目录与计划保留最新版本；不同来源的指令和技能分别保留。
 6. 将保留的用户文本与摘要一起提交为 DSH 检查点。摘要失败、取消、为空、被截断或结果膨胀时保留所选历史；包含工具调用或媒体的摘要也会被拒绝。摘要过程中输入发生变化时，DSH 同样拒绝提交。普通压缩和指定范围压缩保留的用户文本在重新加载会话后仍可恢复。
@@ -68,4 +72,4 @@ DSH 消息格式不能表示加密 reasoning 和不透明的原生响应条目�
 
 ## 来源
 
-源项目为 [openai/codex](https://github.com/openai/codex)，实际参考版本为 [`e72da2b53805894878023d01949a25a082e0a5cb`](https://github.com/openai/codex/tree/e72da2b53805894878023d01949a25a082e0a5cb)，采用 [Apache-2.0](https://github.com/openai/codex/blob/e72da2b53805894878023d01949a25a082e0a5cb/LICENSE) 许可证。参考文件包括 `codex-rs/core/src/compact.rs`、`codex-rs/core/src/context_manager/history.rs` 和 `codex-rs/utils/output-truncation/src/lib.rs`。TypeScript 实现和摘要提示词均为本仓库独立编写。
+源项目为 [openai/codex](https://github.com/openai/codex)，实际参考版本为 [`e72da2b53805894878023d01949a25a082e0a5cb`](https://github.com/openai/codex/tree/e72da2b53805894878023d01949a25a082e0a5cb)，采用 [Apache-2.0](https://github.com/openai/codex/blob/e72da2b53805894878023d01949a25a082e0a5cb/LICENSE) 许可证。参考文件包括 `codex-rs/core/src/compact.rs`、`codex-rs/core/src/context_manager/history.rs` 和 `codex-rs/utils/output-truncation/src/lib.rs`。

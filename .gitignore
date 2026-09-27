@@ -6,3 +6,5 @@ coverage/
 .env
 .env.*
 !.env.example
+.artifacts/
+pnpm-publish-summary.json

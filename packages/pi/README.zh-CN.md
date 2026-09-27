@@ -2,7 +2,11 @@
 
 [English](README.md) | 简体中文
 
-本包拥有 Pi 的用量估算、切点选择、历史与回合前缀摘要、文件操作记录、分支摘要及恢复流程。DSH 只提供会话观察、模型调用和提交操作。
+本包实现 Pi 的用量估算、切点选择、历史与回合前缀摘要、文件操作记录、分支摘要及恢复流程。DSH 只提供会话观察、模型调用和提交操作。
+
+## npm 安装
+
+发布后可用 `dsh plugin --profile web add dsh-context-pi` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
 ## 默认行为
 
@@ -28,4 +32,4 @@ DSH 负责持久化与请求路由，本包维护全部选择和转换步骤。P
 
 DSH 的 system 与 developer 消息保留原位；插件在每个相邻历史段内运行 Pi 的切点算法，跳过没有可压缩前缀的段。用量判断覆盖完整上下文。摘要及文件操作记录继承当前上下文中的全部 checkpoint；只有当前上下文没有 checkpoint 时才回退到插件状态记录。任何当前 checkpoint 之前记录的 usage 都视为过期。
 
-源项目为 [earendil-works/pi](https://github.com/earendil-works/pi)；实际参考本地 fork 的提交 `8a7b0c03dfb702663acafb6dc29f8acaa4ffe391`，源项目采用 MIT 许可证。参考入口为 `packages/coding-agent/src/core/compaction/compaction.ts`。本项目重新编写摘要指令。
+源项目为 [earendil-works/pi](https://github.com/earendil-works/pi)；实际参考本地 fork 的提交 `8a7b0c03dfb702663acafb6dc29f8acaa4ffe391`，源项目采用 MIT 许可证。参考入口为 `packages/coding-agent/src/core/compaction/compaction.ts`。摘要指令定义在 `src/strategy.ts` 中。

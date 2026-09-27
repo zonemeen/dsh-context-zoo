@@ -2,7 +2,11 @@
 
 [English](README.md) | 简体中文
 
-本包独立实现 Kimi Code 的完整历史摘要、超限收缩、原始用户输入恢复及会话续接。默认导出 DSH Cordis 插件；`createPipeline(config)` 可直接接受 `ContextHost`，接入见[根目录说明](../../README.zh-CN.md)。
+本包实现 Kimi Code 的完整历史摘要、超限收缩、原始用户输入恢复及会话续接。默认导出 DSH Cordis 插件；`createPipeline(config)` 可直接接受 `ContextHost`，接入见[根目录说明](https://github.com/zonemeen/dsh-context-zoo/blob/main/README.zh-CN.md)。
+
+## npm 安装
+
+发布后可用 `dsh plugin --profile web add dsh-context-kimi-code` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
 ## 默认流程
 
@@ -22,7 +26,7 @@
 
 ## 来源和 DSH 映射
 
-参考 [MoonshotAI/kimi-code 固定版本](https://github.com/MoonshotAI/kimi-code/tree/be7d5f5fea7800778e4660cd5f36780ba783bddd)，提交 `be7d5f5fea7800778e4660cd5f36780ba783bddd`，MIT。实际流程对应 `packages/agent-core-v2/src/agent/fullCompaction/fullCompactionService.ts`、`agent/contextMemory/compactionHandoff.ts`、`llm-adapter/contract/tokens.ts` 和 `_base/utils/retry.ts`。摘要指令在本项目重新编写。
+参考 [MoonshotAI/kimi-code 固定版本](https://github.com/MoonshotAI/kimi-code/tree/be7d5f5fea7800778e4660cd5f36780ba783bddd)，提交 `be7d5f5fea7800778e4660cd5f36780ba783bddd`，MIT。实际流程对应 `packages/agent-core-v2/src/agent/fullCompaction/fullCompactionService.ts`、`agent/contextMemory/compactionHandoff.ts`、`llm-adapter/contract/tokens.ts` 和 `_base/utils/retry.ts`。摘要指令定义在 `src/pipeline.ts` 中。
 
 原服务通过 `tokenCounting.get(agentContext).size` 决定是否触发压缩，本插件对应使用 DSH `measuredTokens`，包括宿主的 usage 校准。辅助摘要缩减和用户恢复使用本包的 ASCII 字符数除以 4、其他 Unicode 码点逐个计数的估算，图片按 2,000 tokens 计。工具名、参数和角色参与估算。
 

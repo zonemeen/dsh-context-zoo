@@ -2,9 +2,9 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Independent context management workflows from Claude Code, Codex, OpenCode, Pi, Qwen Code, ZCode, and Kimi Code, implemented as [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugins. This TypeScript and pnpm monorepo gives each plugin its own token accounting, triggers, history selection, input preparation, summarization, retries, and recovery.
+Context management workflows from Claude Code, Codex, OpenCode, Pi, Qwen Code, ZCode, and Kimi Code, implemented as [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugins. In this TypeScript and pnpm monorepo, each plugin handles token accounting, triggers, history selection, input preparation, summarization, retries, and recovery.
 
-`core` provides DSH service integration, model calls, file reads, and session transactions. Each plugin owns its compaction algorithm. DSH supplies the interface, tool runtime, and session storage used by the adapted workflow.
+`core` provides DSH service integration, model calls, file reads, and session transactions. Each plugin implements its compaction algorithm. DSH supplies the interface, tool runtime, and session storage used by the adapted workflow.
 
 ## Seven independent plugins
 
@@ -26,7 +26,7 @@ The Codex plugin implements the local summary workflow. Its [README](packages/co
 
 ## Build and check
 
-Requires Node.js `^22.19.0 || >=24.0.0` and pnpm `11.9.0`.
+Repository development requires Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` and pnpm `11.9.0`. Published packages support Node.js `^22.19.0 || >=24.0.0`.
 
 ```sh
 pnpm install
@@ -72,6 +72,15 @@ DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo
 ```
 
 This keeps the literal key out of shell history. Keychain storage is managed by macOS; DSH's supported native store is `$DSH_HOME/.credentials.yaml` (default `~/.dsh/.credentials.yaml`), a plaintext file protected by `0600` permissions, without encryption or Keychain integration. Keep credentials out of repository files and rotate any key exposed in chat.
+
+## Publish to npm
+
+The eight packages use one version; the root stays private. Run either command on a clean `main` branch to select a version, update all packages, run checks, commit, and tag:
+
+- `pnpm release`: push the release and let GitHub Actions publish. Configure the repository's `NPM_TOKEN` secret first.
+- `pnpm release:local`: publish using your local npm login, keeping the release commit and tag local.
+
+Both routes use `latest` for stable versions and `next` for prereleases. Add `--no-increment` for the first `0.1.0` release or `--dry-run` to preview. `pnpm release:check` verifies tarballs without publishing; `pnpm release:publish` retries the current tagged version locally. See the [publishing guide](docs/publishing.md) for authentication, Git synchronization, and retries.
 
 ## Use with DSH
 

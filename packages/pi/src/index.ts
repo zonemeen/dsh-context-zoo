@@ -1,5 +1,5 @@
-/** Pi's independently owned context-management workflow. */
-import { createContextPlugin } from '@dsh-context-zoo/core';
+/** Context management plugin based on the Pi workflow. */
+import { createContextPlugin } from 'dsh-context-core';
 import { createPipeline } from './pipeline.js';
 export { strategy } from './strategy.js';
 export { createPipeline } from './pipeline.js';

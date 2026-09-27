@@ -2,7 +2,7 @@
 
 [English](README.md) | 简体中文
 
-把 Claude Code、Codex、OpenCode、Pi、Qwen Code、ZCode 和 Kimi Code 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件独立拥有计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
+把 Claude Code、Codex、OpenCode、Pi、Qwen Code、ZCode 和 Kimi Code 的上下文管理流程分别实现为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件。TypeScript + pnpm monorepo，每个插件负责计量、触发、历史选择、输入整理、摘要、重试和恢复流程。
 
 `core` 只负责 DSH 服务接入、模型调用、文件读取和会话提交。七个插件没有继承通用压缩算法；原始 agent 的界面、工具运行时和会话文件格式由 DSH 的对应能力承接。
 
@@ -26,7 +26,7 @@ Codex 插件实现本地摘要流程。[插件说明](packages/codex/README.zh-C
 
 ## 构建与检查
 
-需要 Node.js `^22.19.0 || >=24.0.0`、pnpm `11.9.0`。
+仓库开发需要 Node.js `^22.22.2 || ^24.15.0 || >=26.0.0`、pnpm `11.9.0`。已发布包支持 Node.js `^22.19.0 || >=24.0.0`。
 
 ```sh
 pnpm install
@@ -72,6 +72,15 @@ DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo
 ```
 
 这样 shell 历史中不会出现密钥原文。钥匙串由 macOS 管理；DSH 原生支持的存储是 `$DSH_HOME/.credentials.yaml`（默认 `~/.dsh/.credentials.yaml`），它是由 `0600` 权限保护的明文文件，没有加密或钥匙串接入。不要把凭据写入仓库文件；已在聊天中暴露的密钥应当轮换。
+
+## 发布到 npm
+
+八个包使用统一版本，根包保持私有。在工作区干净的 `main` 分支选择以下命令，均会选择版本、更新全部包、检查、提交并打标签：
+
+- `pnpm release`：推送版本，由 GitHub Actions 发布。需先配置仓库的 `NPM_TOKEN` Secret。
+- `pnpm release:local`：使用本机 npm 登录凭证发布，版本提交和标签保留在本地。
+
+两种方式都将稳定版发布到 `latest`，预发布版发布到 `next`。首次发布 `0.1.0` 增加 `--no-increment`，预览增加 `--dry-run`。`pnpm release:check` 仅检查压缩包；`pnpm release:publish` 在本地重试当前带标签版本。认证、Git 同步和重试步骤见[发布指南](docs/publishing.zh-CN.md)。
 
 ## 接入 DSH
 

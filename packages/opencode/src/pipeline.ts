@@ -1,6 +1,6 @@
-/** OpenCode's usage accounting, pruning, tail selection, and continuation sequence. */
+/** Usage accounting, pruning, tail selection, and continuation based on the OpenCode workflow. */
 import type { ContentBlock } from '@deepseek-ai/dsh-llm';
-import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot } from '@dsh-context-zoo/core';
+import type { Checkpoint, ContextConfig, ContextEntry, ContextHost, ContextPipeline, ContextSnapshot } from 'dsh-context-core';
 import { strategy } from './strategy.js';
 
 const CLEARED = '[Old tool result content cleared]';

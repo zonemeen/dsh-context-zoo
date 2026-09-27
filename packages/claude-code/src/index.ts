@@ -1,16 +1,16 @@
-/** Claude Code 2.1.88-inspired context budgets with independently written summaries. */
-import { createContextPlugin, type ContextStrategy } from '@dsh-context-zoo/core';
+/** Context budgets and summarization based on the observed Claude Code 2.1.88 behavior. */
+import { createContextPlugin, type ContextStrategy } from 'dsh-context-core';
 import { createPipeline, summaryInstruction } from './pipeline.js';
 export { createPipeline } from './pipeline.js';
 
-/** Comparison metadata for the independently owned Claude Code 2.1.88 workflow. */
+/** Comparison metadata for the observed Claude Code 2.1.88 workflow. */
 export const strategy: ContextStrategy = {
   id: 'claude-code',
   name: 'Claude Code 2.1.88-inspired',
   source: {
     url: 'https://github.com/anthropics/claude-code',
     revision: 'recovered @anthropic-ai/claude-code 2.1.88; local copy has no Git revision',
-    license: 'No open-source license found in the local recovery; implementation and prompt independently authored',
+    license: 'No open-source license found in the local recovery; reference code and prompts are not copied',
   },
   limitations: [
     'The reference is an unofficial source recovery of 2.1.88; private feature-gated cache-edit and session-memory APIs are unavailable through the DSH model interface.',
