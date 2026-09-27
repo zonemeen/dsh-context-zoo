@@ -8,6 +8,26 @@ This package adapts the OpenCode workflow for usage accounting, tool-output prun
 
 After release, install with `dsh plugin --profile web add dsh-context-opencode`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
+## Context flow
+
+Optional tool-output pruning runs before the automatic threshold check. Recent turns stay outside the summary replacement; on overflow, the latest user message is also retained when earlier user history exists. Transcript clipping only affects summary input; original messages remain in the session log.
+
+```mermaid
+flowchart TD
+    A["Automatic check, manual compact,<br/>or overflow recovery"] --> B{"Within failure and recovery limits?"}
+    B -->|No| L["Keep the current context"]
+    B -->|Yes| C["Optional tool-output pruning<br/>Disabled by default"]
+    C --> D{"Automatic threshold met<br/>or manual / overflow trigger?"}
+    D -->|No| E["Keep the current context<br/>Any completed pruning remains"]
+    D -->|Yes| F["Select older history<br/>Keep recent turns and tool pairs intact"]
+    F --> G{"History available to summarize?"}
+    G -->|No| E
+    G -->|Yes| H["Summarize selected history<br/>Merge prior checkpoints"]
+    H --> I{"Summary and replacement valid?"}
+    I -->|Yes| J["Commit checkpoint with retained tail<br/>On overflow, describe retained media"]
+    I -->|No| K["Do not replace history with a summary<br/>Any completed pruning remains"]
+```
+
 ## Default behavior
 
 - Uses the provider's total usage when available, or sums input, output, and cache usage. Without usage data, it estimates tokens by dividing the message JSON character count by 4 after removing DSH identity fields.

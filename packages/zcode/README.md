@@ -8,6 +8,29 @@ This package adapts the ZCode workflow for usage accounting, microcompaction, co
 
 After release, install with `dsh plugin --profile web add dsh-context-zcode`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
+## Context flow
+
+The diagram uses default settings; rounds begin with assistant messages. Automatic compaction can prune old tool results before summarizing; manual compaction skips prune. Prune changes the active context immediately, so a later summary failure does not undo it. The durable session log keeps the original messages.
+
+```mermaid
+flowchart TD
+    A["Compaction trigger"] -->|Manual| S["Select complete conversation rounds<br/>Pressure or overflow: retain the latest round<br/>Manual: select all<br/>Require at least 2 rounds and an assistant message"]
+    A -->|Pressure or overflow| G{"Automatic failures below the limit?"}
+    G -->|No| N["Keep the current context<br/>No summary commit"]
+    G -->|Yes| P["Prune: enabled by default<br/>Idle over 60 min or near the summary threshold<br/>Replace old tool text<br/>Keep the latest 5 eligible groups,<br/>errors, and media"]
+    P --> T{"Summary needed and recovery allowed?"}
+    T -->|No| N
+    T -->|Yes| S
+    S -->|No range| N
+    S -->|Selected| M["Generate and validate summary<br/>Input overflow: retain more rounds automatically<br/>Manual: trim summary input only<br/>Media failure: retry without media"]
+    M -->|Valid| R["Restore available host state, plan, and reminders<br/>Restore up to 5 earlier successful file reads<br/>Keep references for files exceeding the budget"]
+    R -->|Success| C["Atomically replace selected history<br/>Keep summary, restored context,<br/>and retained messages<br/>Reset failure count"]
+    M -->|Failure after retries| F["Record failure and report error<br/>Keep history after any completed prune"]
+    R -->|Failure after retries| F
+```
+
+Before committing, the host checks that the selected input is unchanged and the summary plus restored context is strictly smaller than the selected history. Cancellation or failed validation prevents the summary commit; any completed prune remains.
+
 ## Default workflow
 
 - Uses the latest assistant provider usage as a baseline and adds subsequent messages; without usage data, estimates tokens as character count divided by 4. Cached input counts toward usage. After pruning, only savings already included in the usage baseline are subtracted.

@@ -8,9 +8,30 @@ This package adapts the Kimi Code workflow for full-history summarization, input
 
 After release, install with `dsh plugin --profile web add dsh-context-kimi-code`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
+## Context flow
+
+This diagram shows the default configuration. Kimi Code builds a checkpoint for a full history segment, placing original user text before the summary. It does not prune live tool outputs or retain recent turns as a separate suffix. Shrinking affects only the auxiliary summary request; original messages remain in the session log.
+
+```mermaid
+flowchart TD
+    A["Automatic: usage ≥ 85% of effective window<br/>or remaining space ≤ 50,000 tokens<br/>Manual compact or overflow recovery"] --> B{"Trigger and recovery checks pass?"}
+    B -->|No| C["Keep the current history"]
+    B -->|Yes| D["Select a full history segment<br/>Keep system and developer messages in place"]
+    D --> E["Prepare summary input within budget<br/>Replacement range stays complete"]
+    E --> F["Request a model summary"]
+    F --> G{"Summary valid?"}
+    G -->|Retryable| H["Shrink auxiliary input or wait<br/>At most five attempts"]
+    H --> F
+    G -->|Failed| I["Keep original history<br/>Commit no replacement"]
+    G -->|Yes| J["Build checkpoint: original user text,<br/>summary with TODOs, recovery information"]
+    J --> L{"Smaller checkpoint<br/>and unchanged input?"}
+    L -->|Yes| K["Commit the full replacement together<br/>User-text restoration budget: 20,000 tokens"]
+    L -->|No| I
+```
+
 ## Default workflow
 
-- Triggers when context usage reaches 85% of the effective window or fewer than 50,000 tokens remain. If the reserve is at least the entire window, only the ratio applies. The model's separate input limit takes precedence. After compaction, it does not compact again until usage grows.
+- Triggers when context usage reaches 85% of the effective window or 50,000 tokens or fewer remain. If the reserve is at least the entire window, only the ratio applies. The model's separate input limit takes precedence. After compaction, it does not compact again until usage grows.
 - Summarizes the full history of the selected segment. The upstream `fullCompactionService` actually used replaces history using `originalHistory.length`, then restores user input through `compactionHandoff`. This plugin does not use the “keep four messages” selector in `strategy.ts`, which that service does not call.
 - Before auxiliary summarization, reserves at most one eighth of the window for output, then takes 85% of the remaining window and subtracts system and tool overhead. When necessary, first keeps a recent suffix that fits.
 - Makes at most five summary attempts. After input overflow, shrinks the current summary history to 70%, 50%, then 35% of its token count, removing orphan tool results at the start. Only the auxiliary input shrinks; the original replacement range stays complete. Blank or truncated summaries are retried after dropping the oldest message. Rate limits, network errors, and temporary service errors use exponential backoff starting at 500 ms, capped at 32 seconds, plus up to 25% random jitter. Cancellation aborts immediately.

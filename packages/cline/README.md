@@ -19,6 +19,32 @@ ctx.plugin(clineContext, {
 });
 ```
 
+## Context flow
+
+The diagram shows the model-summary path and deterministic basic recovery with default settings. Both preserve a recent suffix where feasible and replace one older contiguous span with a checkpoint.
+
+```mermaid
+flowchart TD
+    A["Estimate request size; calibrate budgets<br/>with valid input usage"] --> B{"Compaction trigger?"}
+    B -->|"Below automatic threshold"| N["Keep current context"]
+    B -->|"At least 90% of usable input, or manual"| C["Select older span; keep latest user turn<br/>and recent tail where feasible"]
+    B -->|"Context overflow or HTTP 413"| O["Within recovery limit: find a span<br/>that can meet the smaller target"]
+    O -->|"Feasible"| R["Basic checkpoint: users, context,<br/>prior checkpoints, recent assistant text<br/>and tool activity"]
+    O -->|"No feasible span or limit reached"| N
+    C --> I{"Summary input fits after projection?"}
+    I -->|"No"| X["No checkpoint committed;<br/>selected history stays"]
+    I -->|"Yes"| D["One model call: transcript,<br/>prior checkpoints and file activity"]
+    D -->|"Nonempty response"| S["Build summary checkpoint with file activity"]
+    D -->|"Call throws; not cancelled"| R
+    D -->|"Empty or cancelled"| X
+    S --> V{"Valid, smaller, and input unchanged?"}
+    R --> V
+    V -->|"Yes"| K["Atomically replace selected span;<br/>retain unselected suffix"]
+    V -->|"No"| X
+```
+
+There is no independent tool-result prune stage. Text and attachment limits apply to the auxiliary summary input. Basic recovery calls neither the model nor the filesystem; cancellation, empty output, and rejected output do not trigger it. System/developer messages and unfinished tool calls remain protected, and original messages stay in the durable session log.
+
 ## Workflow
 
 1. Estimate serialized messages at three characters per token. Include system/developer messages and tool schemas in the request budget. With an explicit input limit, use the smaller of that limit and the context window; otherwise use 90% of the window. Automatic compaction starts at 90% of this input budget (81% of the window when no input limit is supplied).

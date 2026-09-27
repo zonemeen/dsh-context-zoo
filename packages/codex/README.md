@@ -20,6 +20,31 @@ import codexContext from 'dsh-context-codex';
 ctx.plugin(codexContext);
 ```
 
+## Context flow
+
+The diagram shows the default local compaction path. Recent user text is preserved inside the checkpoint; system/developer messages and unfinished tool calls stay outside the selected range.
+
+```mermaid
+flowchart TD
+    A["Estimate context from valid usage<br/>and new messages"] --> B{"Compaction trigger?"}
+    B -->|"Below 90% of window"| N["Keep current context"]
+    B -->|"Ordinary request overflow or HTTP 413"| H["Leave recovery to the host"]
+    B -->|"At least 90%, or manual"| C["Select a completed contiguous span"]
+    C --> D["Request a summary with live<br/>system/developer instructions"]
+    D -->|"Summary request overflows"| E["Drop oldest request item<br/>and paired tool counterpart"]
+    E --> D
+    D -->|"Retryable call error"| F["Back off; retry up to five times"]
+    F --> D
+    D -->|"Text returned"| G["Checkpoint: summary + newest user text<br/>(up to 20k tokens) + injected context"]
+    G --> V{"Valid, smaller, and input unchanged?"}
+    V -->|"Yes"| K["Atomically replace selected span<br/>with checkpoint"]
+    V -->|"No"| X["No checkpoint committed;<br/>selected history stays"]
+    D -->|"Cancelled or unrecoverable"| X
+    F -->|"Retries exhausted"| X
+```
+
+There is no independent tool-result prune stage. Overflow retries shorten only the auxiliary summary request. Original messages remain in the durable session log after a checkpoint is committed.
+
 ## Workflow
 
 1. Estimate each message from its model-visible UTF-8 bytes at roughly four bytes per token. Plaintext reasoning does not add to the estimate. Images use a fixed estimate rather than their data URL length. Use the latest valid assistant usage after the live checkpoints as an anchor and add estimates for messages appended afterward; cache usage is counted once.

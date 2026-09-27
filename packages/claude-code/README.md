@@ -14,6 +14,26 @@ ctx.plugin(claudeCodeContext, { prune: true, idleMinutes: 60 });
 
 After release, install with `dsh plugin --profile web add dsh-context-claude-code`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
+## Context flow
+
+The diagram uses default settings. Prune replaces old tool output in the active context before the summary decision. A summary failure leaves any completed prune in place. The durable session log keeps the original messages.
+
+```mermaid
+flowchart TD
+    A["Pressure, manual, or overflow trigger"] --> P["Optional prune: disabled by default<br/>After 60 idle minutes, replace old output<br/>Keep the latest 5 eligible results<br/>and error results"]
+    P --> G{"Summary allowed by threshold and retry limits?<br/>Manual and overflow bypass pressure checks"}
+    G -->|No| N["Continue with the current context"]
+    G -->|Yes| S["Select complete tool-call groups<br/>Keep system/developer messages<br/>and unfinished calls<br/>Retain a recent tail if configured"]
+    S -->|No range| N
+    S -->|Selected| M["Generate and validate summary<br/>Omit images and reasoning from summary input<br/>On input overflow, shrink groups<br/>Up to 4 summary requests"]
+    M -->|Valid| R["Restore instructions, plan, skills,<br/>and agent state<br/>Reread up to 5 recently accessed files"]
+    R -->|Success| C["Atomically replace selected history<br/>Keep summary, restored context,<br/>and retained messages<br/>Reset failure count"]
+    M -->|Failure| F["Record failure; keep history after prune<br/>Manual: report error<br/>Automatic: return without summary"]
+    R -->|Failure| F
+```
+
+Before committing, the host checks that the selected input is unchanged and the summary plus restored context is strictly smaller than the selected history. Cancellation or failed validation prevents the summary commit; any completed prune remains.
+
 ## Workflow
 
 1. Use the latest assistant input, cache-read, cache-write, and output usage as a measurement anchor, then estimate messages added afterward. Without usage data, use this package's character and image estimates. Subtract recorded microcompaction savings from the corresponding anchor.

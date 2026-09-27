@@ -14,6 +14,26 @@ ctx.plugin(claudeCodeContext, { prune: true, idleMinutes: 60 });
 
 发布后可用 `dsh plugin --profile web add dsh-context-claude-code` 安装。按 [npm 指南](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.zh-CN.md#使用已发布的包) 应用宿主 Session 补丁并生成启用配置。仅安装包不会替换当前上下文引擎。
 
+## 上下文流程图
+
+下图采用默认配置。Prune 在判断是否需要摘要之前，先替换当前上下文中的旧工具输出。后续摘要失败不会撤销已完成的 prune。原始消息始终保留在持久化会话日志中。
+
+```mermaid
+flowchart TD
+    A["压力、手动或溢出触发"] --> P["可选 prune：默认关闭<br/>空闲满 60 分钟后替换旧工具输出<br/>保留最近 5 个符合条件的结果<br/>以及错误结果"]
+    P --> G{"阈值及重试次数是否允许执行摘要？<br/>手动及溢出跳过压力检查"}
+    G -->|否| N["继续使用当前上下文"]
+    G -->|是| S["选择完整工具调用组<br/>保留 system/developer 消息<br/>及未完成调用<br/>按配置保留近期尾部"]
+    S -->|无可选范围| N
+    S -->|已选择| M["生成并校验摘要<br/>摘要输入剥离图片和 reasoning<br/>输入溢出时缩小调用组<br/>最多请求 4 次摘要"]
+    M -->|有效| R["恢复指令、计划、技能及 agent 状态<br/>重读最近访问的最多 5 个文件"]
+    R -->|成功| C["原子替换所选历史<br/>保留摘要、恢复内容<br/>及未选消息<br/>清零失败计数"]
+    M -->|失败| F["记录失败，保留 prune 后的历史<br/>手动调用报错<br/>自动调用返回，不提交摘要"]
+    R -->|失败| F
+```
+
+提交前，宿主还会检查所选输入未改变，且摘要加恢复内容严格小于所选历史。取消或校验失败时不提交摘要，已完成的 prune 仍保留。
+
 ## 流程
 
 1. 使用最近一次 assistant 的 input、cache-read、cache-write 和 output usage 作为计量锚点，再估算之后新增的消息。无 usage 时采用本包的字符与图片估算；已记录的微压缩节省量从对应锚点扣除。

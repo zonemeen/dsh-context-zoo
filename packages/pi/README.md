@@ -8,6 +8,29 @@ This package adapts the Pi workflow for usage estimation, cut-point selection, h
 
 After release, install with `dsh plugin --profile web add dsh-context-pi`. Apply the host Session patch and generate the activation overlay as described in the [npm guide](https://github.com/zonemeen/dsh-context-zoo/blob/main/docs/publishing.md#using-the-published-packages). Installing the package alone does not replace the active context engine.
 
+## Context flow
+
+This diagram shows the default configuration. Pi keeps a recent suffix and summarizes the earlier history without pruning live tool outputs. A cut inside a turn needs a separate summary of that turn's prefix so the retained suffix remains understandable. Original messages remain in the session log.
+
+```mermaid
+flowchart TD
+    A["Automatic: usage > window - 16,384 tokens<br/>Manual compact or overflow recovery"] --> B{"Trigger and recovery checks pass?"}
+    B -->|No| C["Keep the current history"]
+    B -->|Yes| D["Keep about 20,000 recent tokens<br/>Find a cut outside tool exchanges"]
+    D --> E{"Safe cut with older history?"}
+    E -->|No| C
+    E -->|Yes| F{"Cut inside a user turn?"}
+    F -->|No| G["Summarize earlier history<br/>Merge the previous summary"]
+    F -->|Yes| H["Summarize earlier history if present<br/>Then summarize the turn prefix separately"]
+    G --> I{"All required summaries valid?"}
+    H --> I
+    I -->|Yes| L["Combine summaries and file records"]
+    I -->|No| K["Keep original history<br/>Commit no partial summary"]
+    L --> M{"Smaller checkpoint<br/>and unchanged input?"}
+    M -->|Yes| J["Commit one checkpoint<br/>Keep the recent suffix"]
+    M -->|No| K
+```
+
 ## Default behavior
 
 - Reads the latest valid assistant usage, excluding errors, cancellations, and zero usage, then adds character-based estimates for subsequent messages. Text, reasoning, tool names, and arguments are counted by dividing their character count by 4 and rounding up; each image counts as 1,200 tokens. Usage from messages before compaction does not trigger another compaction.
