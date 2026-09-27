@@ -87,7 +87,7 @@ npm login --registry=https://registry.npmjs.org/
 pnpm release:local
 ```
 
-Select the version in the terminal. The command uses the same version updates and release checks as the Actions route, creates a local release commit and tag, then publishes all eight packages in dependency order using your npm login. Follow npm's authentication or two-factor prompts. GitHub's `NPM_TOKEN` secret is not needed. The command fetches Git state for validation but does not push commits or tags.
+Select the version in the terminal. The command uses the same version updates and release checks as the Actions route, creates a local release commit and tag, then publishes all eight packages in dependency order using your npm login. npm authentication prompts and registry errors appear directly in the terminal; complete any requested verification there. GitHub's `NPM_TOKEN` secret is not needed. The command fetches Git state for validation but does not push commits or tags.
 
 For the first `0.1.0` release, or to preview the local route:
 
@@ -95,6 +95,8 @@ For the first `0.1.0` release, or to preview the local route:
 pnpm release:local --no-increment
 pnpm release:local --dry-run
 ```
+
+With `--no-increment`, an empty changeset and “No changes to commit” are expected: the existing commit is tagged.
 
 Run the preview before the actual release if needed; it skips publication and the release-check hook. An explicit version is also supported, for example `pnpm release:local 0.2.0-beta.1`.
 

@@ -87,7 +87,7 @@ npm login --registry=https://registry.npmjs.org/
 pnpm release:local
 ```
 
-在终端选择版本。命令复用 Actions 方式的版本更新与发布检查，创建本地版本提交和标签，然后使用本机 npm 登录凭证按依赖顺序发布八个包。按 npm 提示完成认证或双因素验证，无需配置 GitHub 的 `NPM_TOKEN` Secret。命令会获取远端 Git 状态用于校验，但不会推送提交或标签。
+在终端选择版本。命令复用 Actions 方式的版本更新与发布检查，创建本地版本提交和标签，然后使用本机 npm 登录凭证按依赖顺序发布八个包。npm 认证提示和 registry 错误会直接显示在终端，按提示完成验证，无需配置 GitHub 的 `NPM_TOKEN` Secret。命令会获取远端 Git 状态用于校验，但不会推送提交或标签。
 
 首次发布 `0.1.0`，或仅预览本地发布流程：
 
@@ -95,6 +95,8 @@ pnpm release:local
 pnpm release:local --no-increment
 pnpm release:local --dry-run
 ```
+
+使用 `--no-increment` 时，空变更集和 “No changes to commit” 提示属于正常情况：已有提交会被打上标签。
 
 需要预览时，在正式发布前运行；预览会跳过实际发布和发布检查 hook。也支持指定版本，例如 `pnpm release:local 0.2.0-beta.1`。
 

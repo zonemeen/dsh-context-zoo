@@ -28,11 +28,11 @@ async function fixture(t) {
     await copyFile(join(root, file), join(cwd, file));
   }
   await mkdir(join(cwd, 'scripts'));
-  for (const file of ['release-git-check.mjs', 'publish-local.mjs']) {
+  for (const file of ['release-git-check.mjs', 'publish-local.mjs', 'local-publish-plugin.mjs']) {
     await copyFile(join(root, 'scripts', file), join(cwd, 'scripts', file));
   }
   await mkdir(join(cwd, 'node_modules/@release-it'), { recursive: true });
-  for (const name of ['semver', '@release-it/bumper']) {
+  for (const name of ['semver', '@release-it/bumper', 'release-it']) {
     await symlink(join(root, 'node_modules', name), join(cwd, 'node_modules', name), 'junction');
   }
   await writeFile(join(cwd, 'package.json'), JSON.stringify({ name: 'release-fixture', version: '0.1.0', private: true, type: 'module', scripts: { 'release:check': 'node verify-release.mjs' } }, null, 2) + '\n');
@@ -66,8 +66,8 @@ if (process.env.ADVANCE_RELEASE_REMOTE) {
   return { cwd, remote, initial: git(cwd, 'rev-parse', 'HEAD') };
 }
 
-function release(cwd, args, env = {}) {
-  return spawnSync(process.execPath, [releaseBin, '--only-version', '--ci', ...args], { cwd, env: { ...environment, ...env }, encoding: 'utf8', timeout: 60_000 });
+function release(cwd, args, env = {}, input) {
+  return spawnSync(process.execPath, [releaseBin, '--only-version', '--ci', ...args], { cwd, env: { ...environment, ...env }, encoding: 'utf8', timeout: 60_000, input });
 }
 const log = result => `${result.stdout}\n${result.stderr}`;
 const remoteTag = f => git(f.cwd, 'ls-remote', '--tags', 'origin');
@@ -171,9 +171,17 @@ async function localPublisher(f) {
   await mkdir(join(f.cwd, '.artifacts'), { recursive: true });
   const stub = join(f.cwd, '.artifacts/pnpm-stub.mjs');
   await writeFile(stub, `
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+if (process.env.EXPECT_NPM_INPUT) {
+  const input = readFileSync(0, 'utf8');
+  if (input !== process.env.EXPECT_NPM_INPUT) throw new Error('Publisher could not read terminal input.');
+  process.stdout.write('Publisher received terminal input.');
+}
 writeFileSync('.artifacts/publish-args.json', JSON.stringify(process.argv.slice(2)));
-if (process.env.FAIL_NPM_PUBLISH) process.exit(1);
+if (process.env.FAIL_NPM_PUBLISH) {
+  process.stdout.write('ERR_NPM_TEST: The registry rejected this test publication.');
+  process.exit(1);
+}
 `);
   return { npm_execpath: stub };
 }
@@ -202,6 +210,7 @@ test('a failed local publication preserves the release commit and tag for retry'
   const result = release(f.cwd, ['0.1.1', '--config', '.release-it.local.json'], { ...env, FAIL_NPM_PUBLISH: '1' });
   assert.notEqual(result.status, 0, log(result));
   assert.match(log(result), /pnpm release:publish/);
+  assert.match(log(result), /ERR_NPM_TEST: The registry rejected this test publication/);
   const head = git(f.cwd, 'rev-parse', 'HEAD');
   assert.notEqual(head, f.initial);
   assert.equal(git(f.cwd, 'rev-parse', 'refs/tags/v0.1.1^{}'), head);
@@ -236,4 +245,13 @@ test('local publishing refuses a commit newer than the release tag', async t => 
   assert.notEqual(result.status, 0);
   assert.match(log(result), /HEAD must match v0.1.0/);
   await assert.rejects(readFile(join(f.cwd, '.artifacts/publish-args.json')), { code: 'ENOENT' });
+});
+
+test('local npm authentication can read terminal input and display its output', async t => {
+  const f = await fixture(t);
+  const env = await localPublisher(f);
+  const input = 'test-authentication-response';
+  const result = release(f.cwd, ['0.1.1', '--config', '.release-it.local.json'], { ...env, EXPECT_NPM_INPUT: input }, input);
+  assert.equal(result.status, 0, log(result));
+  assert.match(log(result), /Publisher received terminal input/);
 });

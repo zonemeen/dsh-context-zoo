@@ -17,7 +17,6 @@ const pnpm = process.env.npm_execpath;
 if (!pnpm) throw new Error('Run this command through pnpm release:local or pnpm release:publish.');
 const tag = prerelease(version) ? 'next' : 'latest';
 process.stdout.write(`Publishing v${version} from this machine with npm tag ${tag}.\n`);
-// The local release hook runs after release-it disables Git rollback: npm writes cannot be undone.
 const result = spawnSync(process.execPath, [
   pnpm, '--recursive', 'publish', '--access', 'public', '--tag', tag,
   '--git-checks', '--publish-branch', 'main', '--registry', 'https://registry.npmjs.org', '--report-summary', ...args,
