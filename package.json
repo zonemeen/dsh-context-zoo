@@ -17,6 +17,7 @@
     "clean": "node scripts/clean.mjs",
     "test:profiles": "node --test scripts/check-dsh-profiles.mjs",
     "test:deepseek": "node scripts/check-deepseek.mjs",
+    "test:continuation": "node scripts/check-deepseek-continuation.mjs",
     "release:check": "pnpm check && node scripts/check-release.mjs",
     "release": "release-it --only-version",
     "release:local": "release-it --only-version --config .release-it.local.json",

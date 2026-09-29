@@ -48,7 +48,7 @@ DSH_SOURCE_DIR=/path/to/deepseek-harness pnpm test:profiles
 
 ### DeepSeek 实际 API 检查与凭据
 
-[2026-09-26 实测结果](reports/deepseek/2026-09-26/README.zh-CN.md) 汇集了不同次执行中当时七个插件的最终观察，包含所选调用的 API 用量、测试范围与限制，以及汇总文件 `results.json`。Cline 已通过单独的 [2026-09-27 实际 API 检查](reports/deepseek/2026-09-27/README.zh-CN.md)，覆盖手动压缩、会话回放和 10/10 事实召回。上下文估算量从 5,506 降至 1,844 tokens，减少 66.5%。
+八个插件使用同一个实际 API 检查脚本。历史观测保存在 [2026-09-26 报告](reports/deepseek/2026-09-26/README.zh-CN.md)和 [2026-09-27 报告](reports/deepseek/2026-09-27/README.zh-CN.md)中，包含 API 用量、事实召回和测试限制。这些报告来自不同次执行；以下命令可一起评测八个插件。
 
 通过环境变量向测试进程提供 `DEEPSEEK_API_KEY` 后运行：
 
@@ -71,7 +71,7 @@ pnpm test:deepseek --agent codex --max-summary-tokens 4096 --skip-baseline
 若要保存在本地文件，可在 Git 已忽略的 `.env.local` 中设置 `DEEPSEEK_API_KEY`。脚本不会自动加载 `.env` 文件，需要通过 Node 显式加载：
 
 ```sh
-node --env-file=.env.local scripts/check-deepseek.mjs --agent cline
+node --env-file=.env.local scripts/check-deepseek.mjs
 ```
 
 在 macOS 上长期保存密钥时，建议通过**钥匙串访问**创建密码项，服务/名称填 `dsh-context-zoo-deepseek`，账户填自己的登录用户名。在 GUI 中输入密钥，仅在启动测试时注入：
@@ -81,6 +81,17 @@ DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo
 ```
 
 这样 shell 历史中不会出现密钥原文。钥匙串由 macOS 管理；DSH 原生支持的存储是 `$DSH_HOME/.credentials.yaml`（默认 `~/.dsh/.credentials.yaml`），它是由 `0600` 权限保护的明文文件，没有加密或钥匙串接入。不要把凭据写入 Git 跟踪的文件；已在聊天中暴露的密钥应当轮换。
+
+### 多次压缩后的编码续接评测
+
+`pnpm test:continuation` 让真实模型分十个阶段修改并执行一个隔离的发票导入项目，最终执行 43 项独立验收，在三处边界检查压缩与磁盘重载。任务正确性、成功摘要和重载分别评分；摘要跳过或被拒绝后继续任务，但不计作成功压缩。默认每轮运行八个插件和一个共享的未压缩基线（`--agent all`）。`--budget-mode both` 可对照固定预算与插件默认参数，`--agent <id>` 可选择任意插件，`--repeats` 可重复实验。
+
+```sh
+pnpm build
+node --env-file=.env.local scripts/check-deepseek-continuation.mjs
+```
+
+报告保留各阶段验收、细分的压缩结果、磁盘重载、实际 API 请求上限与用量、重复读取、源文件和会话快照。实测结果见[扩展任务报告](reports/continuation/2026-09-29/extended/README.zh-CN.md)和[早先报告](reports/continuation/2026-09-29/README.zh-CN.md)，配置及范围见[编码续接评测说明](docs/continuation-evaluation.zh-CN.md)。`--task invoice-import-v1` 保留早先的四阶段任务；`test:deepseek` 用于单次压缩后的事实召回。
 
 ## 发布到 npm
 

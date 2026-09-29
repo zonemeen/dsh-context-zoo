@@ -1,0 +1,78 @@
+[
+  {
+    "id": "claude-code",
+    "afterPhase": 3,
+    "commandResult": {
+      "kind": "error",
+      "text": "Compaction could not produce a useful summary. The attempt is recorded in the session log."
+    },
+    "event": {
+      "type": "compaction/end",
+      "seq": 116,
+      "time": 1790666623158,
+      "data": {
+        "compactionId": "db9b7861-2585-4929-82fa-9f61437d4745",
+        "turn": null,
+        "sourceCommandId": "cmd-2fcb5314-1",
+        "error": "Summary response stopped at its output limit"
+      }
+    }
+  },
+  {
+    "id": "qwen-code",
+    "afterPhase": 1,
+    "commandResult": {
+      "kind": "error",
+      "text": "Compaction could not produce a useful summary. The attempt is recorded in the session log."
+    },
+    "event": {
+      "type": "compaction/end",
+      "seq": 36,
+      "time": 1790666756962,
+      "data": {
+        "compactionId": "57c63eba-3277-4fdc-8a59-3094f274b1b2",
+        "turn": null,
+        "sourceCommandId": "cmd-9debe585-1",
+        "error": "Qwen summary and restored context would increase history tokens"
+      }
+    }
+  },
+  {
+    "id": "zcode",
+    "afterPhase": 1,
+    "commandResult": {
+      "kind": "error",
+      "text": "Compaction could not produce a useful summary. The attempt is recorded in the session log."
+    },
+    "event": {
+      "type": "compaction/end",
+      "seq": 52,
+      "time": 1790666772506,
+      "data": {
+        "compactionId": "aa013b7e-39d0-4fb6-8fda-50d912ec549e",
+        "turn": null,
+        "sourceCommandId": "cmd-bd32342b-1",
+        "error": "Summary and recovered context are not smaller than the selected history"
+      }
+    }
+  },
+  {
+    "id": "kimi-code",
+    "afterPhase": 1,
+    "commandResult": {
+      "kind": "error",
+      "text": "Compaction could not produce a useful summary. The attempt is recorded in the session log."
+    },
+    "event": {
+      "type": "compaction/end",
+      "seq": 36,
+      "time": 1790666782766,
+      "data": {
+        "compactionId": "6b369a14-1187-43e1-ba15-5b69f2d5dbec",
+        "turn": null,
+        "sourceCommandId": "cmd-c8094214-1",
+        "error": "Summary and recovered context are not smaller than the selected history"
+      }
+    }
+  }
+]

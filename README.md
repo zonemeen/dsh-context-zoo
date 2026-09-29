@@ -48,7 +48,7 @@ This optional check covers configuration composition. Full Web/Electron startup 
 
 ### Live DeepSeek checks and credentials
 
-The [2026-09-26 results](reports/deepseek/2026-09-26/README.md) combine final observations for the seven plugins available at that time from separate executions, with selected API usage, test limits, and a combined `results.json` file. Cline passed a separate [live check on 2026-09-27](reports/deepseek/2026-09-27/README.md), including manual compaction, session replay, and 10/10 factual recall. Its estimated context size fell from 5,506 to 1,844 tokens (66.5%).
+The eight plugins use the same live-check runner. Historical observations are recorded in the [2026-09-26 report](reports/deepseek/2026-09-26/README.md) and [2026-09-27 report](reports/deepseek/2026-09-27/README.md), with API usage, factual recall, and test limits. These reports cover different executions; use the command below to evaluate all eight together.
 
 With `DEEPSEEK_API_KEY` supplied to the test process, run:
 
@@ -71,7 +71,7 @@ The selected plugin still runs `/compact` and the post-replay recall check.
 For local file storage, set `DEEPSEEK_API_KEY` in `.env.local`, which Git ignores. The runner does not load `.env` files automatically; load it explicitly with Node:
 
 ```sh
-node --env-file=.env.local scripts/check-deepseek.mjs --agent cline
+node --env-file=.env.local scripts/check-deepseek.mjs
 ```
 
 For persistent storage on macOS, use **Keychain Access** to create a password item with service/name `dsh-context-zoo-deepseek` and your login name as the account. Enter the key in the GUI, then supply it only when launching the test:
@@ -81,6 +81,17 @@ DEEPSEEK_API_KEY="$(security find-generic-password -a "$USER" -s dsh-context-zoo
 ```
 
 This keeps the literal key out of shell history. Keychain storage is managed by macOS; DSH's supported native store is `$DSH_HOME/.credentials.yaml` (default `~/.dsh/.credentials.yaml`), a plaintext file protected by `0600` permissions, without encryption or Keychain integration. Keep credentials out of Git-tracked files and rotate any key exposed in chat.
+
+### Coding continuation after repeated compaction
+
+`pnpm test:continuation` asks a real model to edit and execute an isolated invoice-import project across ten stages and 43 final acceptance cases. Three boundaries check compaction and disk replay. Task correctness, committed summaries, and replay are scored separately; a skipped or rejected summary permits continued work without earning compaction credit. Each repetition runs all eight plugins and one shared uncompressed baseline by default (`--agent all`). Use `--budget-mode both` to compare fixed budgets and plugin defaults, `--agent <id>` for any one plugin, and `--repeats` for repeated trials.
+
+```sh
+pnpm build
+node --env-file=.env.local scripts/check-deepseek-continuation.mjs
+```
+
+Reports retain per-stage acceptance, classified compaction outcomes, disk replay, actual API request caps and usage, repeated reads, source files, and session snapshots. See the [extended live results](reports/continuation/2026-09-29/extended/README.md), [earlier results](reports/continuation/2026-09-29/README.md), and [continuation evaluation guide](docs/continuation-evaluation.md). The earlier four-stage task remains available with `--task invoice-import-v1`. `test:deepseek` covers single-compaction factual recall.
 
 ## Publish to npm
 

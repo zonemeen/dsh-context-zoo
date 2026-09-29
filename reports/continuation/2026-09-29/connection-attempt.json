@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "task": "invoice-import-v1",
+  "startedAt": "2026-09-29T06:53:44.549Z",
+  "model": "deepseek-flash",
+  "settings": {
+    "auto": false,
+    "maxSummaryTokens": 2048,
+    "maxSummaryAttempts": 1,
+    "maxOverflowRetries": 0
+  },
+  "limits": {
+    "httpRequests": 108,
+    "maxStepsPerPhase": 12,
+    "requestTimeoutMs": 90000
+  },
+  "scope": "Executable isolated coding fixture, four development stages, three forced manual compactions and disk replay. Small source project, not an external repository benchmark, default-threshold test, or actual-overflow test. Acceptance results are never injected into model history.",
+  "requests": [
+    {
+      "id": "baseline",
+      "repeat": 1,
+      "path": "/anthropic/v1/messages",
+      "startedAt": "2026-09-29T06:53:44.561Z",
+      "error": "fetch failed",
+      "headersReceivedMs": 27
+    },
+    {
+      "id": "cline",
+      "repeat": 1,
+      "path": "/anthropic/v1/messages",
+      "startedAt": "2026-09-29T06:53:44.599Z",
+      "error": "fetch failed",
+      "headersReceivedMs": 1
+    }
+  ],
+  "results": [
+    {
+      "repeat": 1,
+      "id": "baseline",
+      "task": "invoice-import-v1",
+      "settings": {
+        "keepRecentTokens": 256,
+        "auto": false,
+        "maxSummaryTokens": 2048,
+        "maxSummaryAttempts": 1,
+        "maxOverflowRetries": 0
+      },
+      "status": "failed",
+      "phases": [
+        {
+          "id": "retry-policy",
+          "modelSteps": 1,
+          "toolCalls": 0,
+          "toolErrors": 0
+        }
+      ],
+      "compactions": [],
+      "calls": [
+        {
+          "phase": 1,
+          "purpose": "task",
+          "startedAt": "2026-09-29T06:53:44.559Z",
+          "finish": "error",
+          "elapsedMs": 30
+        }
+      ],
+      "operations": [],
+      "error": "Task response did not finish: error",
+      "elapsedMs": 40,
+      "finalFiles": {
+        "src/policy.mjs": {
+          "bytes": 157,
+          "sha256": "89ec22c1ba7a9da1cd1a0437a964990897e3e3f29348530d01afc61d7a9bbe2e"
+        },
+        "src/store.mjs": {
+          "bytes": 244,
+          "sha256": "7f124af292672a449591901de95604b1ad74c66944876eadba4460d1380c9d72"
+        },
+        "src/importer.mjs": {
+          "bytes": 228,
+          "sha256": "f6d3bc702f90d320c249149e2b65454203ef09910c71e40354b7858c7ea8e891"
+        }
+      },
+      "totalUsage": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputTokens": 0
+      },
+      "callsWithoutUsage": 1,
+      "repeatedReads": 0
+    },
+    {
+      "repeat": 1,
+      "id": "cline",
+      "task": "invoice-import-v1",
+      "settings": {
+        "keepRecentTokens": 256,
+        "auto": false,
+        "maxSummaryTokens": 2048,
+        "maxSummaryAttempts": 1,
+        "maxOverflowRetries": 0
+      },
+      "status": "failed",
+      "phases": [
+        {
+          "id": "retry-policy",
+          "modelSteps": 1,
+          "toolCalls": 0,
+          "toolErrors": 0
+        }
+      ],
+      "compactions": [],
+      "calls": [
+        {
+          "phase": 1,
+          "purpose": "task",
+          "startedAt": "2026-09-29T06:53:44.599Z",
+          "finish": "error",
+          "elapsedMs": 2
+        }
+      ],
+      "operations": [],
+      "error": "Task response did not finish: error",
+      "elapsedMs": 12,
+      "finalFiles": {
+        "src/policy.mjs": {
+          "bytes": 157,
+          "sha256": "89ec22c1ba7a9da1cd1a0437a964990897e3e3f29348530d01afc61d7a9bbe2e"
+        },
+        "src/store.mjs": {
+          "bytes": 244,
+          "sha256": "7f124af292672a449591901de95604b1ad74c66944876eadba4460d1380c9d72"
+        },
+        "src/importer.mjs": {
+          "bytes": 228,
+          "sha256": "f6d3bc702f90d320c249149e2b65454203ef09910c71e40354b7858c7ea8e891"
+        }
+      },
+      "totalUsage": {
+        "inputTokens": 0,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputTokens": 0
+      },
+      "callsWithoutUsage": 1,
+      "repeatedReads": 0
+    }
+  ],
+  "elapsedMs": 52,
+  "totalUsage": {
+    "inputTokens": 0,
+    "cacheReadTokens": 0,
+    "cacheWriteTokens": 0,
+    "outputTokens": 0
+  },
+  "callsWithoutUsage": 2,
+  "comparisons": [
+    {
+      "id": "cline",
+      "completedRuns": 1,
+      "passedRuns": 0,
+      "pairedBaseline": [
+        {
+          "repeat": 1,
+          "baselineStatus": "failed",
+          "strategyStatus": "failed"
+        }
+      ]
+    }
+  ]
+}

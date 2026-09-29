@@ -1,0 +1,125 @@
+{
+  "task": "invoice-import-v2",
+  "scope": "Final source hashes, reproducible acceptance, summary events and boundary snapshots; partial-source scores are diagnostic only and do not change the protocol score.",
+  "runs": [
+    {
+      "run": "1-baseline",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 0,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-claude-code",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 2,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-codex",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 2,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-opencode",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 2,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-pi",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-qwen-code",
+      "status": "task-failed",
+      "task": "failed",
+      "compactions": 2,
+      "score": "37/43"
+    },
+    {
+      "run": "1-fixed-zcode",
+      "status": "runtime-error",
+      "task": "not-completed",
+      "compactions": 0,
+      "partialSourceAcceptance": "4/4"
+    },
+    {
+      "run": "1-fixed-kimi-code",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-fixed-cline",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-claude-code",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-codex",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-opencode",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 1,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-pi",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 0,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-qwen-code",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-zcode",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-kimi-code",
+      "status": "passed",
+      "task": "passed",
+      "compactions": 3,
+      "score": "43/43"
+    },
+    {
+      "run": "1-plugin-defaults-cline",
+      "status": "compaction-incomplete",
+      "task": "passed",
+      "compactions": 2,
+      "score": "43/43"
+    }
+  ]
+}
