@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-codex",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "description": "Codex context management strategy adapted for DeepSeek Harness.",

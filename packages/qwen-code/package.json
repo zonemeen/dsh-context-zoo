@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-qwen-code",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "description": "qwen-code context management strategy adapted for DeepSeek Harness.",

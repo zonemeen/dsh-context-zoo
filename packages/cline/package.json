@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-cline",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "description": "Cline context management workflow adapted for DeepSeek Harness.",
