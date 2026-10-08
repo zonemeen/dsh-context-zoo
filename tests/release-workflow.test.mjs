@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, writeFile, copyFile, symlink, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { devNull, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,7 +11,17 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const releaseBin = join(root, 'node_modules/release-it/bin/release-it.js');
 const ids = ['core', 'claude-code', 'codex', 'opencode', 'pi', 'qwen-code', 'zcode', 'kimi-code', 'cline'];
 // Fixture manifests intentionally have no install; pnpm 11 must not repair their linked dependencies.
-const environment = { ...process.env, CI: 'true', PNPM_MANAGE_PACKAGE_MANAGER_VERSIONS: 'false', pnpm_config_verify_deps_before_run: 'false', GIT_TERMINAL_PROMPT: '0' };
+const environment = {
+  ...process.env,
+  CI: 'true',
+  PNPM_MANAGE_PACKAGE_MANAGER_VERSIONS: 'false',
+  pnpm_config_verify_deps_before_run: 'false',
+  GIT_TERMINAL_PROMPT: '0',
+  // Fixtures must work on fresh CI runners without the developer's Git identity.
+  GIT_CONFIG_GLOBAL: devNull,
+  GIT_CONFIG_NOSYSTEM: '1',
+};
+for (const name of ['GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL']) delete environment[name];
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: environment }).trim();
 
 async function fixture(t) {
@@ -22,7 +32,10 @@ async function fixture(t) {
   await mkdir(cwd);
   git(scratch, 'init', '--bare', '--initial-branch=main', remote);
   git(cwd, 'init', '--initial-branch=main');
-  for (const [name, value] of [['user.name', 'Release Test'], ['user.email', 'release@example.invalid'], ['commit.gpgsign', 'false'], ['tag.gpgsign', 'false'], ['core.hooksPath', join(scratch, 'hooks')]]) git(cwd, 'config', name, value);
+  // commit-tree writes directly to the bare remote, which has its own config.
+  for (const repository of [cwd, remote]) {
+    for (const [name, value] of [['user.name', 'Release Test'], ['user.email', 'release@example.invalid'], ['commit.gpgsign', 'false'], ['tag.gpgsign', 'false'], ['core.hooksPath', join(scratch, 'hooks')]]) git(repository, 'config', name, value);
+  }
   await writeFile(join(cwd, '.gitignore'), 'node_modules/\n.artifacts/\n');
   for (const file of ['.release-it.json', '.release-it.local.json']) {
     await copyFile(join(root, file), join(cwd, file));
