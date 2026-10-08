@@ -31,7 +31,12 @@ test("all nine strategies render their own stages and formulas", async ({ page }
 });
 
 test("budget, scenarios, playback, and navigation are interactive", async ({ page }) => {
-  await expect(page.locator(".budget-value strong")).toHaveText("57,344");
+  await expect(page.getByLabel("模型窗口")).toHaveValue("1048576");
+  await expect(page.locator("#window option")).toHaveText(["256K tokens", "512K tokens", "1M tokens"]);
+  await expect(page.locator(".budget-value strong")).toHaveText("838,860");
+  await expect(page.locator(".budget-footnote")).toContainText("W = 1,048,576 tokens");
+  await page.getByLabel("模型窗口").selectOption("524288");
+  await expect(page.locator(".budget-value strong")).toHaveText("419,430");
   await page.getByLabel("模型窗口").selectOption("262144");
   await expect(page.locator(".budget-value strong")).toHaveText("188,416");
   const original = await page.locator(".flow-stats strong").first().textContent();

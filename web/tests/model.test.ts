@@ -21,7 +21,7 @@ test("the comparison distinguishes proportional, reserved, and fallback budgets"
 
 test("all teaching traces conserve their displayed totals and preserve the system block", () => {
   for (const strategy of strategies) {
-    for (const window of [131072, 262144, 524288]) {
+    for (const window of [131072, 262144, 524288, 1048576]) {
       for (const scenario of ["coding", "tools", "requirements"] as ScenarioId[]) {
         const trace = simulate(strategy.id, window, scenario);
         assert.equal(trace.beforeTokens, trace.before.reduce((total, block) => total + block.tokens, 0));

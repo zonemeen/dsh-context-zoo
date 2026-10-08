@@ -48,6 +48,8 @@ pnpm test:e2e
 
 ## 内容与双语
 
+窗口选项为 **256K（262,144）、512K（524,288）、1M（1,048,576）tokens**，默认 1M，标签按 1,024 的倍数计算。1M 数值参考 [DeepSeek 官方模型配置](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)的 `context_window`，核对日期为 2026-10-08；预算说明显示所选窗口的准确数值。这些选项是统一的模拟输入，具体模型上限可能不同，例如 [GPT-4.1](https://developers.openai.com/api/docs/models/gpt-4.1) 标注为 1,047,576 tokens。
+
 - `src/lib/strategies.ts`：九套策略、默认预算公式、双语机制说明、来源和历史观测数据。
 - `src/lib/i18n.ts`：中英文界面、案例与实测注释。
 - `src/lib/simulation.ts`：确定性的教学样例，不执行真实压缩，也不预测生产收益。

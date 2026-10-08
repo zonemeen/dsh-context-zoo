@@ -48,6 +48,8 @@ Next.js is used for Vercel integration, build-time rendering, metadata, and futu
 
 ## Content and localization
 
+Window presets are **256K (262,144), 512K (524,288), and 1M (1,048,576) tokens**, with 1M selected by default. These labels use multiples of 1,024. The 1M value follows the `context_window` in [DeepSeek's official model configuration](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/), checked on 2026-10-08. The budget note displays the exact selected value. Presets are shared simulation inputs; actual model limits vary (for example, [GPT-4.1](https://developers.openai.com/api/docs/models/gpt-4.1) lists 1,047,576 tokens).
+
 - `src/lib/strategies.ts`: nine strategies, default-budget formulas, bilingual explanations, source references, and historical report observations.
 - `src/lib/i18n.ts`: Chinese and English interface copy, cases, and evidence notes.
 - `src/lib/simulation.ts`: deterministic teaching fixtures. They do not execute real compaction pipelines or estimate production savings.
