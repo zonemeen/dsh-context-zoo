@@ -1,0 +1,3 @@
+# Keep this frontend independent of the parent workspace.
+packages:
+  - '.'
