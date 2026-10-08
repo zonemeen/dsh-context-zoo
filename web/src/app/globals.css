@@ -23,6 +23,22 @@
 
 html {
   scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c4ae transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: #b8c4ae;
+  border-radius: 6px;
 }
 
 body {
@@ -244,12 +260,25 @@ button,a,select {
   position: sticky;
   top: 73px;
   height: calc(100vh - 73px);
-  min-height: 710px;
+  height: calc(100dvh - 73px);
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
   padding: 30px 14px 18px 18px;
   border-right: 1px solid var(--line);
   background: #fafbf9;
   display: flex;
   flex-direction: column;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar > * {
+  flex-shrink: 0;
 }
 
 .sidebar-heading {
@@ -2092,7 +2121,7 @@ html[lang="en"] h1 {
     width: 181px;
     top: 66px;
     height: calc(100vh - 66px);
-    min-height: 700px;
+    height: calc(100dvh - 66px);
     padding: 26px 8px 18px;
   }
   .sidebar-heading {
@@ -2360,6 +2389,8 @@ html[lang="en"] h1 {
     width: 100%;
     height: auto;
     min-height: 0;
+    overflow: visible;
+    overscroll-behavior-y: auto;
     position: relative;
     top: auto;
     padding: 16px 0 14px;
@@ -2731,7 +2762,6 @@ body {
 
 .sidebar {
   width: 248px;
-  min-height: 790px;
 }
 
 .strategy-button-copy strong {
@@ -3858,9 +3888,6 @@ body {
   }
   .comparison-table {
     min-width: 970px;
-  }
-  .sidebar {
-    min-height: 810px;
   }
   .sidebar-bottom {
     padding-top: 24px;
